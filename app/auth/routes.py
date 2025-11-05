@@ -1,5 +1,5 @@
 # app/auth/routes.py
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import render_template, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required
 from . import auth
 from ..extensions import db
@@ -35,7 +35,7 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user)
             flash("Logged in successfully!", "success")
-            return redirect(url_for("trips.list_trips"))
+            return redirect(url_for("product.products_list"))
         flash("Invalid username or password.", "danger")
     return render_template("auth/login.html", form=form)
 

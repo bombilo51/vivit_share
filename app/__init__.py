@@ -15,6 +15,9 @@ def create_app(config_name='default'):
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
+    from .product import product as product_blueprint
+    app.register_blueprint(product_blueprint, url_prefix='/product')
+
     # Simple index route
     @app.route('/')
     def index():
