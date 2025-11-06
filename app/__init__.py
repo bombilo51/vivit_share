@@ -18,6 +18,9 @@ def create_app(config_name='default'):
     from .product import product as product_blueprint
     app.register_blueprint(product_blueprint, url_prefix='/product')
 
+    from .order import order as order_blueprint
+    app.register_blueprint(order_blueprint, url_prefix='/order')
+
     # Simple index route
     @app.route('/')
     def index():

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<h1>Order List</h1>
+<a href="{{ url_for('order.add_order') }}" class="btn btn-primary mb-3">Add New Order</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Items</th>
+            <th>Total Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.created_at.strftime('%d-%m-%Y %H:%M:%S') }}</td>
+            <td>
+                <ul class="list-group">
+                    <table class="table table-sm table-borderless mb-0">
+                        {% for item in order.items %}
+
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>x{{ item.quantity }}</td>
+                            <td>{{ '%.2f' | format(item.unit_price) }} UAH</td>
+                            <td>{{ '%.2f' | format(item.unit_price * item.quantity) }} UAH</td>
+                        </tr>
+
+                        {#<li class="list-group-item">
+                            {{ item.product.name }} (x{{ item.quantity }}) - {{ '%.2f' |
+                            format(item.unit_price * item.quantity) }} UAH</li> #}
+                        {% endfor %}
+                    </table>
+                </ul>
+            </td>
+            <td>{{ '%.2f' | format(order.total) }} UAH</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
