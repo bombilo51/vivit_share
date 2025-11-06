@@ -19,25 +19,35 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
 class Product(db.Model):
     __tablename__ = "product"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     cost = db.Column(Numeric(10, 2), nullable=False)
-    margin = db.Column(Numeric(5, 2), nullable=True)
+    margin = db.Column(Numeric(10, 2), nullable=True)
 
-    def __init__(self, name, price):
+    def __init__(self, name, cost):
         self.name = name
-        self.cost = Decimal(price)
-        
+        self.cost = Decimal(cost)
+
     @property
     def price(self):
         if self.margin is not None:
-            margin_amount = (self.cost * self.margin) / Decimal(100)
-            return self.cost + margin_amount
+            return self.cost + self.margin
         return self.cost
-        
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "cost": float(self.cost),
+            "margin": float(self.margin) if self.margin is not None else None,
+            "price": float(self.price),
+        }
+
+
 class OrderItem(db.Model):
     __tablename__ = "order_item"
 
@@ -56,7 +66,9 @@ class OrderItem(db.Model):
     def __init__(self, product, quantity=1, unit_price=None):
         self.product = product
         self.quantity = int(quantity)
-        self.unit_price = Decimal(unit_price) if unit_price is not None else Decimal(product.price)
+        self.unit_price = (
+            Decimal(unit_price) if unit_price is not None else Decimal(product.price)
+        )
 
 
 class Order(db.Model):
@@ -64,7 +76,9 @@ class Order(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    items = db.relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    items = db.relationship(
+        "OrderItem", back_populates="order", cascade="all, delete-orphan"
+    )
 
     def add_product(self, product, quantity=1, unit_price=None):
         for item in self.items:
@@ -80,8 +94,8 @@ class Order(db.Model):
         total = Decimal("0")
         for item in self.items:
             total += Decimal(item.quantity) * Decimal(item.unit_price)
-        return total        
-    
+        return total
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -92,9 +106,9 @@ class Order(db.Model):
                     "product_name": item.product.name,
                     "quantity": item.quantity,
                     "unit_price": float(item.unit_price),
-                    "total_price": float(item.total_price)
+                    "total_price": float(item.total_price),
                 }
                 for item in self.items
             ],
-            "total": float(self.total)
+            "total": float(self.total),
         }

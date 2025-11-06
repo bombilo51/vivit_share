@@ -1,39 +1,48 @@
 {% extends 'base.html' %}
 
+{%block title %}Products{% endblock title %}
+{% block content %}
+<h1>Products List</h1>
+<p>This is the products list page.</p>
+<div class="row">
+    <div class="col">
+        <a href="{{ url_for('product.add_product') }}" class="btn btn-primary mb-3">Add New Product</a>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Cost</th>
+                    <th>Margin</th>
+                    <th>Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="productTableBody">
+                {% for product in products %}
+                <tr id="productRow{{ product.id }}">
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.cost }}</td>
+                    <td>{{ product.margin }}</td>
+                    <td>{{ product.price }}</td>
+                    <td>
+                        <a href="{{ url_for('product.edit_product', product_id=product.id) }}"
+                            class="btn btn-sm btn-warning">Edit</a>
+                        <a onclick="deleteProduct({{ product.id }})" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock content %}
 
-{% block content %}    
-    <h1>Products List</h1>
-    <p>This is the products list page.</p>
-    <div class="row">
-        <div class="col">
-            <a href="{{ url_for('product.add_product') }}" class="btn btn-primary mb-3">Add New Product</a>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col">
-            <table class="">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in products %}
-                    <tr>
-                        <td>{{ product.id }}</td>
-                        <td>{{ product.name }}</td>
-                        <td>{{ product.price }}</td>
-                        <td>
-                            <a href="{{ url_for('product.edit_product', product_id=product.id) }}" class="btn btn-sm btn-warning">Edit</a>
-                            <a href="{{ url_for('product.delete_product', product_id=product.id) }}" class="btn btn-sm btn-danger">Delete</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-{% endblock content %}    
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/product/products_list.js') }}"></script>
+{% endblock scripts %}

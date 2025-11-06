@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Products{% endblock title %}
+
+{% block content %}
+<h1>Add New Product</h1>
+<form method="POST" action="{{ url_for('product.add_product') }}">
+  <div class="row mb-1">
+    <div class="col">
+      <label for="name">Product Name:</label>
+      <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+  </div>
+  <div class="row mb-1">
+    <div class="col">
+      <label for="cost">Cost:</label>
+      <input type="number" step="0.01" class="form-control" id="cost" name="cost" required>
+    </div>
+  </div>
+  <div class="row mb-1">
+    <div class="col">
+      <label for="margin">Margin (%):</label>
+      <input type="number" step="0.01" class="form-control" id="marginPercent" name="marginPercent" required>
+    </div>
+    <div class="col">
+      <label for="margin">Margin (X):</label>
+      <input type="number" step="0.01" class="form-control" id="marginMultiplier" name="marginMultiplier" required>
+    </div>
+    <div class="col">
+      <label for="margin">Margin (₴):</label>
+      <input type="number" step="0.01" class="form-control" id="marginUAH" name="marginUAH" required>
+    </div>
+  </div>
+  <div class="row mb-1">
+    <div class="col">
+      <label for="price">Price:</label>
+      <input type="number" step="0.01" class="form-control" id="price" name="price" required>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary">Add Product</button>
+
+  {% endblock content %}
+
+  {% block scripts %}
+  <script src="{{ url_for('static', filename='js/product/margin_calc.js') }}"></script>
+  {% endblock scripts %}
