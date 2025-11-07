@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from .config import config
-from .extensions import db, migrate, login_manager
+from .extensions import db, migrate, login_manager, cors
 
 def create_app(config_name='default'):
     app = Flask(__name__, template_folder='templates', static_folder='static')
@@ -10,6 +10,7 @@ def create_app(config_name='default'):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    cors.init_app(app)
 
     # Register blueprints
     from .auth import auth as auth_blueprint
@@ -20,6 +21,9 @@ def create_app(config_name='default'):
 
     from .order import order as order_blueprint
     app.register_blueprint(order_blueprint, url_prefix='/order')
+
+    from .analytics import analytics as analytics_blueprint
+    app.register_blueprint(analytics_blueprint, url_prefix='/analytics')
 
     # Simple index route
     @app.route('/')

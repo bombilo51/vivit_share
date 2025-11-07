@@ -3,6 +3,7 @@ from flask_login import login_required
 from . import order
 from ..extensions import db
 from ..models import Order, OrderItem, Product
+from datetime import datetime
 
 
 @login_required
@@ -20,16 +21,17 @@ def add_order():
         date = request.form.get("date")
         product_ids = request.form.getlist("product[]")
         quantities = request.form.getlist("quantity[]")
+        unit_prices = request.form.getlist("unitPrice[]")
 
         new_order = Order()
-        new_order.created_at = date
+        new_order.created_at = datetime.fromisoformat(date)
 
-        for product_id, quantity in zip(product_ids, quantities):
+        for product_id, quantity, unit_price in zip(product_ids, quantities, unit_prices):
             if product_id and int(quantity) > 0:
                 product = next((p for p in products if p.id == int(product_id)), None)
                 if product:
                     new_order.add_product(
-                        product=product, quantity=int(quantity)
+                        product=product, quantity=int(quantity), unit_price=unit_price
                     )
 
         db.session.add(new_order)

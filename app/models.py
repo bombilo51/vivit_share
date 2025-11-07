@@ -1,7 +1,7 @@
 from decimal import Decimal
 from sqlalchemy import Numeric
 from .extensions import db
-from datetime import datetime
+from datetime import datetime, date
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -111,4 +111,48 @@ class Order(db.Model):
                 for item in self.items
             ],
             "total": float(self.total),
+        }
+
+class SMMStats (db.Model):
+    __tablename__ = "smm_stats"
+
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, unique=True)
+
+    spends = db.Column(Numeric(10, 2), nullable=False, default=0)
+    coverage = db.Column(db.Integer, nullable=False, default=0)
+    clicks = db.Column(db.Integer, nullable=False, default=0)
+    direct_messages = db.Column(db.Integer, nullable=False, default=0)
+
+    def __init__(self, date_value, spends=0, coverage=0, clicks=0, direct_messages=0):
+        self.date = date_value or date.today()
+        self.spends = Decimal(spends)
+        self.coverage = int(coverage)
+        self.clicks = int(clicks)
+        self.direct_messages = int(direct_messages)
+    
+    @property
+    def cpc(self):
+        """Cost Per Click"""
+        if self.clicks == 0:
+            return Decimal("0")
+        return self.spends / Decimal(self.clicks)
+
+    @property
+    def cpm(self):
+        """Cost Per 100 Impressions"""
+        if self.coverage == 0:
+            return Decimal("0")
+        return (self.spends / Decimal(self.coverage)) * Decimal("1000")
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "date": self.date.isoformat(),
+            "spends": float(self.spends),
+            "coverage": self.coverage,
+            "clicks": self.clicks,
+            "direct_messages": self.direct_messages,
+            "cpc": float(self.cpc),
+            "cpm": float(self.cpm),
         }

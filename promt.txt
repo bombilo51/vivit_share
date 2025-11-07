@@ -1,0 +1,1 @@
+I need to create analytics dashboard. It should use ajax, flask, jinja2, bootstrap. At first there should be a table for every day of month (even if there were no orders) with totals (margin, quantity of orders, total cost/revenue). 

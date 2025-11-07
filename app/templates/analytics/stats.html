@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}
+Monthly Stats
+{% endblock %}
+
+{% block content %}
+<h2>Monthly Stats</h2>
+<label>Select Month:
+    <input class="form-control" type="month" id="monthPicker" name="month" required/>
+</label>
+
+<table id="statsTable" class="table">
+    <thead>
+        <th>Date</th>
+        <th>Orders</th>
+        <th>Total Sales</th>
+        <th>Total Margin</th>
+        <th>SMM Spends</th>
+        <th>Coverage</th>
+        <th>Clicks</th>
+        <th>DMs</th>
+    </thead>
+    <tbody></tbody>
+</table>
+{% endblock content %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analytics/stats.js') }}"></script>
+{% endblock scripts %}

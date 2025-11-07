@@ -1,7 +1,7 @@
 $(document).ready(function () {
 
     $("#orderDate").datepicker({
-        format: "dd MM yyyy (dd-mm-yyyy)", // ISO-friendly format
+        format: "yyyy-mm-dd", // ISO-friendly format
         autoclose: true,
         todayHighlight: true,
         weekStart: 1 // Monday

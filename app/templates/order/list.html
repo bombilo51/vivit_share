@@ -23,17 +23,12 @@
                 <ul class="list-group">
                     <table class="table table-sm table-borderless mb-0">
                         {% for item in order.items %}
-
                         <tr>
                             <td>{{ item.product.name }}</td>
                             <td>x{{ item.quantity }}</td>
                             <td>{{ '%.2f' | format(item.unit_price) }} UAH</td>
                             <td>{{ '%.2f' | format(item.unit_price * item.quantity) }} UAH</td>
                         </tr>
-
-                        {#<li class="list-group-item">
-                            {{ item.product.name }} (x{{ item.quantity }}) - {{ '%.2f' |
-                            format(item.unit_price * item.quantity) }} UAH</li> #}
                         {% endfor %}
                     </table>
                 </ul>
