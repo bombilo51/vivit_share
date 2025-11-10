@@ -12,11 +12,12 @@
             <th>Date</th>
             <th>Items</th>
             <th>Total Price</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
         {% for order in orders %}
-        <tr>
+        <tr id="orderRow-{{order.id}}">
             <td>{{ order.id }}</td>
             <td>{{ order.created_at.strftime('%d-%m-%Y %H:%M:%S') }}</td>
             <td>
@@ -34,8 +35,16 @@
                 </ul>
             </td>
             <td>{{ '%.2f' | format(order.total) }} UAH</td>
+            <td>
+                <a href="{{ url_for('order.edit_order', order_id=order.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                <a onclick="deleteOrder({{ order.id }})" class="btn btn-sm btn-danger">Delete</a>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/order/order_list.js') }}"></script>
 {% endblock %}
