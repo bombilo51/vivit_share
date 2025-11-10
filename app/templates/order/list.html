@@ -2,6 +2,8 @@
 
 {% block title %}Orders{% endblock %}
 
+
+
 {% block content %}
 <h1>Order List</h1>
 <a href="{{ url_for('order.add_order') }}" class="btn btn-primary mb-3">Add New Order</a>
@@ -14,6 +16,14 @@
             <th>Total Price</th>
             <th></th>
         </tr>
+        <tr>
+            <th></th>
+            <th></th>
+            <th>Product / Quantity / Unit Price / Total Price</th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
     </thead>
     <tbody>
         {% for order in orders %}
@@ -23,6 +33,12 @@
             <td>
                 <ul class="list-group">
                     <table class="table table-sm table-borderless mb-0">
+                        <colgroup>
+                            <col class="w-25">
+                            <col class="w-25">
+                            <col class="w-25">
+                            <col class="w-25">
+                        </colgroup>
                         {% for item in order.items %}
                         <tr>
                             <td>{{ item.product.name }}</td>
@@ -46,5 +62,5 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/order/order_list.js') }}"></script>
+<script src="{{ url_for('static', filename='js/order/order_list.js') }}"></script>
 {% endblock %}

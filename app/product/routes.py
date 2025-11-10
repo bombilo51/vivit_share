@@ -5,22 +5,22 @@ from ..extensions import db
 from ..models import Product
 
 
-@login_required
 @product.route("/products_list")
+@login_required
 def products_list():
     products = Product.query.all()
     return render_template("product/products_list.html", products=products)
 
 
-@login_required
 @product.route("/product/<int:product_id>")
+@login_required
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
     return render_template("product/product_detail.html", product=product)
 
 
-@login_required
 @product.route("/add_product", methods=["GET", "POST"])
+@login_required
 def add_product():
     if request.method == "POST":
         name = request.form.get("name")
@@ -36,8 +36,9 @@ def add_product():
         return redirect(url_for("product.products_list"))
     return render_template("product/add_product.html")
 
-@login_required
+
 @product.route("/delete_product/<int:product_id>", methods=["DELETE"])
+@login_required
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
     db.session.delete(product)
@@ -45,18 +46,28 @@ def delete_product(product_id):
     return {"product_id": product_id, "status": "success"}, 200
 
 
-@login_required
 @product.route("/edit_product/<int:product_id>", methods=["GET", "POST"])
+@login_required
 def edit_product(product_id):
-    product : Product = Product.query.get_or_404(product_id)
+    product: Product = Product.query.get_or_404(product_id)
     marginUAH = product.margin if product.margin is not None else 0
-    marginPercent = round(product.cost and (product.margin / product.cost) * 100 or 0, 2)
-    marginMultiplier = round(product.cost and ((product.cost + product.margin) / product.cost) or 0, 2)
+    marginPercent = round(
+        product.cost and (product.margin / product.cost) * 100 or 0, 2
+    )
+    marginMultiplier = round(
+        product.cost and ((product.cost + product.margin) / product.cost) or 0, 2
+    )
     if request.method == "POST":
         product.name = request.form.get("name")
         product.cost = request.form.get("cost")
         product.margin = request.form.get("marginUAH")
         db.session.commit()
         return redirect(url_for("product.products_list"))
-    
-    return render_template("product/edit_product.html", product=product, marginUAH=marginUAH, marginPercent=marginPercent, marginMultiplier=marginMultiplier)
+
+    return render_template(
+        "product/edit_product.html",
+        product=product,
+        marginUAH=marginUAH,
+        marginPercent=marginPercent,
+        marginMultiplier=marginMultiplier,
+    )

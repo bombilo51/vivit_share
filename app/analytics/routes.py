@@ -1,5 +1,6 @@
 from decimal import Decimal
 from flask import jsonify, render_template, request
+from flask_login import login_required
 from sqlalchemy import func
 from datetime import datetime, date, timedelta
 from ..extensions import db
@@ -8,11 +9,13 @@ from . import analytics
 
 
 @analytics.route("/stats", methods=["GET"])
+@login_required
 def stats():
     return render_template("analytics/stats.html")
 
 
 @analytics.route("/get_monthly_stats", methods=["POST"])
+@login_required
 def get_monthly_stats():
     data = request.get_json()
     month_param = data.get("month")
@@ -35,10 +38,11 @@ def get_monthly_stats():
         db.session.query(
             func.date(Order.created_at).label("day"),
             func.count(Order.id).label("order_count"),
-            func.sum(OrderItem.quantity * OrderItem.unit_price).label(
-                "total_sales"
-            ),
-            func.sum(OrderItem.quantity * OrderItem.unit_price - (Product.cost * OrderItem.quantity)).label("total_margin"),
+            func.sum(OrderItem.quantity * OrderItem.unit_price).label("total_sales"),
+            func.sum(
+                OrderItem.quantity * OrderItem.unit_price
+                - (Product.cost * OrderItem.quantity)
+            ).label("total_margin"),
         )
         .join(OrderItem, Order.id == OrderItem.order_id)
         .join(Product, Product.id == OrderItem.product_id)
@@ -98,6 +102,7 @@ def get_monthly_stats():
 
 
 @analytics.route("/update_smm_stat", methods=["POST"])
+@login_required
 def update_smm_stat():
     data = request.get_json()
     field = data.get("type")

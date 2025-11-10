@@ -30,11 +30,5 @@ def create_app(config_name='default'):
     def index():
         return render_template('index.html')
     
-    
-    @login_manager.user_loader
-    def load_user(user_id):
-        from .models import User
-        return User.query.get(int(user_id))
-    
     return app
     

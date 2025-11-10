@@ -1,6 +1,17 @@
 $(document).ready(function () {
-  const $monthPicker = $("#monthPicker");
+  const $monthPicker = $("#monthFilter");
   const $tableBody = $("#statsTable tbody");
+
+  $("#monthFilter").datepicker({
+    format: "yyyy-mm",
+    autoclose: true,
+    todayHighlight: true,
+    weekStart: 1, // Monday
+    minViewMode: 1,
+  });
+
+  // Optional: Set today's date by default
+  $("#monthFilter").datepicker("setDate", new Date());
 
   $monthPicker.on("change", function () {
     const month = $(this).val(); // e.g. "2025-11"

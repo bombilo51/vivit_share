@@ -4,11 +4,17 @@
 Monthly Stats
 {% endblock %}
 
+{% block head %}
+<link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css" />
+{% endblock head %}
+
 {% block content %}
 <h2>Monthly Stats</h2>
-<label>Select Month:
-    <input class="form-control" type="month" id="monthPicker" name="month" required/>
-</label>
+<div class="col-md-3">
+    <label for="monthFilter" class="form-label"><strong>Date</strong></label>
+    <input type="text" class="form-control" id="monthFilter" name="date" placeholder="Select date" autocomplete="off" />
+</div>
 
 <table id="statsTable" class="table">
     <thead>
@@ -26,5 +32,7 @@ Monthly Stats
 {% endblock content %}
 
 {% block scripts %}
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
 <script src="{{ url_for('static', filename='js/analytics/stats.js') }}"></script>
 {% endblock scripts %}

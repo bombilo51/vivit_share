@@ -4,13 +4,13 @@ $(document).ready(function () {
         format: "yyyy-mm-dd", // ISO-friendly format
         autoclose: true,
         todayHighlight: true,
-        weekStart: 1 // Monday
+        weekStart: 1, // Monday
     });
 
-    // Optional: Set today's date by default
-    $("#orderDate").datepicker("setDate", new Date());
-
-
+    if ($("#orderDate").val() == '') {
+        $("#orderDate").datepicker("setDate", new Date());
+    }
+    
     const $tableBody = $('#orderItemsBody');
     const $grandTotal = $('#grandTotal');
 

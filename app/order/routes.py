@@ -7,15 +7,15 @@ from datetime import datetime
 from ..utils import get_order_products
 
 
-@login_required
+
 @order.route("/list", methods=["GET"])
+@login_required
 def orders_list():
     orders = Order.query.all()
     return render_template("order/list.html", orders=orders)
 
-
-@login_required
 @order.route("/add", methods=["GET", "POST"])
+@login_required
 def add_order():
     products = Product.query.all()
     if request.method == "POST":
@@ -44,9 +44,8 @@ def add_order():
 
     return render_template("order/add.html", products=products)
 
-
-@login_required
 @order.route("/edit/<int:order_id>", methods=["GET", "POST"])
+@login_required
 def edit_order(order_id):
     order: Order = Order.query.get_or_404(order_id)
     products = Product.query.all()
