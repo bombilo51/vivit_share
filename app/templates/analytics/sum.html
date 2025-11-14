@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Summary
+{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css" />
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-md-3">
+      <label for="startDate" class="form-label"><strong>Date</strong></label>
+      <input type="text" class="form-control datepicker" id="startDate" name="startDate" placeholder="Select date" autocomplete="off" />
+    </div>
+    <div class="col-md-3">
+      <label for="endDate" class="form-label"><strong>Date</strong></label>
+      <input type="text" class="form-control datepicker" id="endDate" name="endDate" placeholder="Select date" autocomplete="off" />
+    </div>
+  </div>
+  <table class="table w-50">
+    <thead>
+      <th></th>
+      <th></th>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Загальна сума витрат</td>
+        <td id="total_spends"></td>
+      </tr>
+      <tr>
+        <td>Загальне охоплення</td>
+        <td id="total_coverage"></td>
+      </tr>
+      <tr>
+        <td>Загальна к-сть кліків</td>
+        <td id="total_clicks"></td>
+      </tr>
+      <tr>
+        <td>Загальна к-сть заявок</td>
+        <td id="total_orders"></td>
+      </tr>
+      <tr>
+        <td>Загальна к-сть продажів</td>
+        <td id="total_sales"></td>
+      </tr>
+      <tr>
+        <td>Сума продажів</td>
+        <td id="sum_sales"></td>
+      </tr>
+      <tr>
+        <td>Маржа</td>
+        <td id="margin"></td>
+      </tr>
+      <tr>
+        <td>Прибуток</td>
+        <td id="revenue"></td>
+      </tr>
+      <tr>
+        <td>Конверсія</td>
+        <td id="convert"></td>
+      </tr>
+      <tr>
+        <td>ROAS</td>
+        <td id="roas"></td>
+      </tr>
+      <tr>
+        <td>Середня ціна замовлення</td>
+        <td id="order_price_average"></td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+  <script src="{{ url_for('static', filename='js/analytics/summary.js') }}"></script>
+{% endblock %}

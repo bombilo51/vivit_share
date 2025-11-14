@@ -43,11 +43,12 @@ $(document).ready(function () {
               <td>${day.date}</td>
               <td>${day.order_count}</td>
               <td>${day.total_sales.toFixed(2)}</td>
-              <td>${day.total_margin.toFixed(2)}</td>
-              <td><input class="form-control smmStats" type="number" step="0.1" data-type="spends" data-date="${day.date}" value="${day.smm_spends.toFixed(2)}"></td>
+              <td id="margin-${day.date}" value="${day.total_margin.toFixed(2)}">${day.total_margin.toFixed(2)}</td>
+              <td><input id="spends-${day.date}" class="form-control smmStats" type="number" step="0.1" data-type="spends" data-date="${day.date}" value="${day.smm_spends.toFixed(2)}"></td>
               <td><input class="form-control smmStats" type="number" step="0.1" data-type="coverage" data-date="${day.date}" value="${day.smm_coverage}"></td>
               <td><input class="form-control smmStats" type="number" step="0.1" data-type="clicks" data-date="${day.date}" value="${day.smm_clicks}"></td>
               <td><input class="form-control smmStats" type="number" step="0.1" data-type="direct_messages" data-date="${day.date}" value="${day.smm_direct_messages}"></td>
+              <td><input id="revenue-${day.date}" class="form-control smmStats" type="number" step="0.1" data-type="revenue" data-date="${day.date}" value="${day.revenue}" readonly></td>
             </tr>
           `;
           $tableBody.append(row);
@@ -61,12 +62,16 @@ $(document).ready(function () {
       },
       complete: function () {
         $(".smmStats").on("change", function () {
-
-
-
           const type = $(this).data("type");
           const date = $(this).data("date");
-          const value = $(this).val();
+          var value = $(this).val();
+          const $revenue = $(`#revenue-${date}`);
+          const $marigin = $(`#margin-${date}`);
+          const $spends = $(`#spends-${date}`);
+
+          console.log($revenue);
+          console.log($marigin.text());
+          console.log($spends);
 
           console.log(`CHANGED ${type} ${date} ${value}`)
 
@@ -81,6 +86,8 @@ $(document).ready(function () {
             contentType: "application/json",
             success: function (response) {
               console.log("Updated successfully:", response);
+              revenue = parseFloat($marigin.text()) - $spends.val();
+              $revenue.val(revenue);
             },
             error: function (xhr) {
               console.error("Failed to update:", xhr);
@@ -89,8 +96,5 @@ $(document).ready(function () {
         });
       },
     });
-
-
-
   });
 });

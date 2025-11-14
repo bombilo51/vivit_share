@@ -58,29 +58,3 @@ const datasets = products.map(p => ({
     fill: false,
     tension: 0.3
 }));
-
-// new Chart(document.getElementById('salesChart'), {
-//     type: 'line',
-//     data: {
-//         labels: months,
-//         datasets: datasets
-//     },
-//     options: {
-//         responsive: true,
-//         plugins: {
-//             title: {
-//                 display: true,
-//                 text: 'Monthly Product Revenue (UAH)'
-//             },
-//             legend: {
-//                 position: 'bottom'
-//             }
-//         },
-//         scales: {
-//             y: {
-//                 beginAtZero: true,
-//                 title: { display: true, text: 'Revenue (UAH)' }
-//             }
-//         }
-//     }
-// });

@@ -1,4 +1,3 @@
-from decimal import Decimal
 from flask import jsonify, render_template, request
 from flask_login import login_required
 from sqlalchemy import func
@@ -76,7 +75,6 @@ def get_monthly_stats():
         )
         smm_info = smm_by_day.get(day)
 
-        total_margin = Decimal("0")
         if smm_info:
             pass
 
@@ -93,6 +91,7 @@ def get_monthly_stats():
                 "smm_coverage": smm_info.coverage if smm_info else 0,
                 "smm_clicks": smm_info.clicks if smm_info else 0,
                 "smm_direct_messages": smm_info.direct_messages if smm_info else 0,
+                "revenue": order_info["total_margin"] - (float(smm_info.spends) if smm_info else 0.0),
             }
         )
 
@@ -130,3 +129,49 @@ def update_smm_stat():
 
     db.session.commit()
     return jsonify({"success": True, "day": day, "field": field, "value": value})
+
+@analytics.route("/summary", methods=["GET", "POST"])
+@login_required
+def summary():
+    if request.method == "POST":
+        json = request.get_json()
+        startDate = json["startDate"]
+        endDate = json["endDate"]
+        
+        data = (db.session.query(
+            func.date(Order.created_at).label("day"),
+            func.sum(SMMStats.spends).label("total_spends"),
+            func.sum(SMMStats.coverage).label("total_coverage"),
+            func.sum(SMMStats.clicks).label("total_clicks"),
+            func.count(Order.id).label("total_sales"),
+            func.sum(SMMStats.direct_messages).label("total_orders"),
+            func.sum(OrderItem.unit_price * OrderItem.quantity).label("sum_sales"),
+            func.sum(
+                OrderItem.quantity * OrderItem.unit_price
+                - (Product.cost * OrderItem.quantity)
+            ).label("margin")
+            )
+            .join(OrderItem, Order.id == OrderItem.order_id)
+            .join(Product, Product.id == OrderItem.product_id)
+            .filter(Order.created_at >= startDate, Order.created_at < endDate)
+            .all()
+            )
+        
+        row = data.pop()
+        
+        
+        return jsonify({
+            "total_spends": row.total_spends,
+            "total_coverage": row.total_coverage,
+            "total_clicks": row.total_clicks,
+            "total_sales": row.total_sales,
+            "sum_sales": row.sum_sales,
+            "total_orders" : row.total_orders,
+            "margin": row.margin,
+            "revenue": row.margin - row.total_spends,
+            "convert": ((row.total_sales / row.total_orders ) * 100) if row.total_orders else 0.0,
+            "roas": row.total_spends,    
+            "order_price_average": row.total_spends, 
+        })
+    return render_template("analytics/sum.html")
+        
