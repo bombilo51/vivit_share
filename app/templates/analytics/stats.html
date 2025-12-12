@@ -10,23 +10,31 @@ Monthly Stats
 {% endblock head %}
 
 {% block content %}
-<h2>Monthly Stats</h2>
-<a href="{{ url_for('analytics.summary') }}">Summary</a>
-<div class="col-md-3">
-    <label for="monthFilter" class="form-label"><strong>Date</strong></label>
-    <input type="text" class="form-control" id="monthFilter" name="date" placeholder="Select date" autocomplete="off" />
-</div>
+<h2>Статистика</h2>
+<a href="{{ url_for('analytics.summary') }}">Звіт</a>
+    <div class="row">
+        <div class="col-md-3">
+            <label for="startDateFilter" class="form-label"><strong>З: </strong></label>
+            <input type="text" class="form-control" id="startDateFilter" name="startDate" placeholder="Select date" autocomplete="off" />
+        </div>
+        <div class="col-md-3">
+            <label for="endDateFilter" class="form-label"><strong>По: </strong></label>
+            <input type="text" class="form-control" id="endDateFilter" name="endDate" placeholder="Select date" autocomplete="off" />
+        </div>
+    </div>
+
 
 <table id="statsTable" class="table">
     <thead>
-        <th>Date</th>
-        <th>Orders</th>
-        <th>Total Sales</th>
-        <th>Total Margin</th>
-        <th>SMM Spends</th>
-        <th>Coverage</th>
-        <th>Clicks</th>
-        <th>DMs</th>
+        <th>День</th>
+        <th>К-сть замовлень</th>
+        <th>Сума продажів</th>
+        <th>Маржа</th>
+        <th>Витрати на рекламу (USD)</th>
+        <th>Витрати на рекламу (UAH)</th>
+        <th>Охоплення</th>
+        <th>Кліки</th>
+        <th>Звернення</th>
         <th>Прибуток</th>
     </thead>
     <tbody></tbody>

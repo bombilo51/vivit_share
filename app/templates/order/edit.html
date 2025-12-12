@@ -24,6 +24,7 @@
                 <th>Product</th>
                 <th>Quantity</th>
                 <th>Unit Price</th>
+                <th>Margin</th>
                 <th>Total Price</th>
                 <th></th>
             </tr>
@@ -36,10 +37,12 @@
                         <option value="">Select Product</option>
                         {% for product in products %}
                         {% if item.product_id == product.id %}
-                        <option value="{{ product.id }}" data-price="{{ product.price }}" selected>{{ product.name }}
+                        <option value="{{ product.id }}" data-price="{{ product.price }}"
+                                data-margin="{{ product.margin }}" selected>{{ product.name }}
                         </option>
                         {% else %}
-                        <option value="{{ product.id }}" data-price="{{ product.price }}">{{ product.name }}</option>
+                        <option value="{{ product.id }}" data-price="{{ product.price }}"
+                                data-margin="{{ product.margin }}">{{ product.name }}</option>
                         {% endif %}
                         {% endfor %}
                     </select>
@@ -47,6 +50,8 @@
                 <td><input type="number" name="quantity[]" class="form-control quantity-input" value="{{item.quantity}}" min="1"></td>
                 <td><input type="number" name="unitPrice[]" class="form-control unit-price-input" step="0.01"
                         value="{{ item.unit_price }}" min="0"></td>
+                <td><input type="number" name="margin[]" class="form-control margin-input" step="0.01" value="{{ item.product.margin }}"
+                            min="0" disabled></td>
                 <td><input type="number" name="totalPrice[]" class="form-control total-price-input" step="0.01"
                         value="{{ item.quantity * item.unit_price }}"></td>
                 <td><button type="button" class="btn btn-danger btn-sm remove-item-btn">Remove</button></td>
@@ -57,13 +62,16 @@
                     <select name="product[]" class="form-select product-select">
                         <option value="">Select Product</option>
                         {% for product in products %}
-                        <option value="{{ product.id }}" data-price="{{ product.price }}">{{ product.name }}</option>
+                        <option value="{{ product.id }}" data-price="{{ product.price }}"
+                        data-margin="{{ product.margin }}">{{ product.name }}</option>
                         {% endfor %}
                     </select>
                 </td>
                 <td><input type="number" name="quantity[]" class="form-control quantity-input" value="" min="1"></td>
                 <td><input type="number" name="unitPrice[]" class="form-control unit-price-input" step="0.01"
                         value="0.00" min="0"></td>
+                <td><input type="number" name="margin[]" class="form-control margin-input" step="0.01" value="0.00"
+                           min="0" disabled></td>
                 <td><input type="number" name="totalPrice[]" class="form-control total-price-input" step="0.01"
                         value="0.00"></td>
                 <td><button type="button" class="btn btn-danger btn-sm remove-item-btn">Remove</button></td>
@@ -82,5 +90,5 @@
 <script
     src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
 <script src="{{ url_for('static', filename='js/order/add.js') }}"></script>
-<script src="{{ url_for('static', filename='js/order/edit.js') }}"></script>
+{#<script src="{{ url_for('static', filename='js/order/edit.js') }}"></script>#}
 {% endblock %}

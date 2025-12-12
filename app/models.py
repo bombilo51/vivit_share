@@ -1,4 +1,6 @@
 from decimal import Decimal
+from email.policy import default
+
 from sqlalchemy import Numeric
 from .extensions import db
 from datetime import datetime, date
@@ -47,7 +49,6 @@ class Product(db.Model):
             "price": float(self.price),
         }
 
-
 class OrderItem(db.Model):
     __tablename__ = "order_item"
 
@@ -69,7 +70,6 @@ class OrderItem(db.Model):
         self.unit_price = (
             Decimal(unit_price) if unit_price is not None else Decimal(product.price)
         )
-
 
 class Order(db.Model):
     __tablename__ = "order"
@@ -123,6 +123,8 @@ class SMMStats (db.Model):
     coverage = db.Column(db.Integer, nullable=False, default=0)
     clicks = db.Column(db.Integer, nullable=False, default=0)
     direct_messages = db.Column(db.Integer, nullable=False, default=0)
+
+    usd_rate = db.Column(Numeric(10, 2), nullable=True)
 
     def __init__(self, date_value, spends=0, coverage=0, clicks=0, direct_messages=0):
         self.date = date_value or date.today()

@@ -4,7 +4,6 @@ from . import order
 from ..extensions import db
 from ..models import Order, OrderItem, Product
 from datetime import datetime
-from ..utils import get_order_products
 
 
 
@@ -17,7 +16,7 @@ def orders_list():
 @order.route("/add", methods=["GET", "POST"])
 @login_required
 def add_order():
-    products = Product.query.all()
+    products = Product.query.order_by(Product.name).all()
     if request.method == "POST":
         date = request.form.get("date")
         product_ids = request.form.getlist("product[]")
@@ -48,7 +47,7 @@ def add_order():
 @login_required
 def edit_order(order_id):
     order: Order = Order.query.get_or_404(order_id)
-    products = Product.query.all()
+    products = Product.query.order_by(Product.name).all()
 
     if request.method == "POST":
         date = request.form.get("date")

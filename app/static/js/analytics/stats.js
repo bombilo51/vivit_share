@@ -1,30 +1,40 @@
 $(document).ready(function () {
-  const $monthPicker = $("#monthFilter");
-  const $tableBody = $("#statsTable tbody");
+    const $startDate = $("#startDateFilter");
+    const $endDate = $("#endDateFilter");
+    const $tableBody = $("#statsTable tbody");
 
-  $("#monthFilter").datepicker({
-    format: "yyyy-mm",
-    autoclose: true,
-    todayHighlight: true,
-    weekStart: 1, // Monday
-    minViewMode: 1,
-  });
+    $startDate.datepicker({
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        todayHighlight: true,
+        weekStart: 1, // Monday
+        minViewMode: 0,
+    });
 
-  // Optional: Set today's date by default
-  $("#monthFilter").datepicker("setDate", new Date());
+    $endDate.datepicker({
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        todayHighlight: true,
+        weekStart: 1, // Monday
+        minViewMode: 0,
+    });
 
-  $monthPicker.on("change", function () {
-    const month = $(this).val(); // e.g. "2025-11"
-    if (!month) return;
+  function DateFilterChange() {
+      const startDate = $startDate.val();
+      const endDate = $endDate.val();
+      if (!startDate || !endDate) return;
 
     $.ajax({
       url: `/analytics/get_monthly_stats`,
       method: "POST",
-      data: JSON.stringify({ month: month }),
+      data: JSON.stringify({
+          startDate: startDate,
+          endDate: endDate,
+      }),
       contentType: "application/json",
       beforeSend: function () {
         $tableBody.html(
-          `<tr><td colspan="8">Loading data for ${month}...</td></tr>`
+          `<tr><td colspan="8">Loading data for ${startDate} - ${endDate}...</td></tr>`
         );
       },
       success: function (data) {
@@ -32,19 +42,21 @@ $(document).ready(function () {
 
         if (!data || data.length === 0) {
           $tableBody.html(
-            `<tr><td colspan="8">No data available for ${month}</td></tr>`
+            `<tr><td colspan="8">No data available for ${startDate} - ${endDate}</td></tr>`
           );
           return;
         }
 
-        $.each(data, function (_, day) {
+        $.each(data,
+            function (_, day) {
           const row = `
             <tr>
               <td>${day.date}</td>
               <td>${day.order_count}</td>
               <td>${day.total_sales.toFixed(2)}</td>
               <td id="margin-${day.date}" value="${day.total_margin.toFixed(2)}">${day.total_margin.toFixed(2)}</td>
-              <td><input id="spends-${day.date}" class="form-control smmStats" type="number" step="0.1" data-type="spends" data-date="${day.date}" value="${day.smm_spends.toFixed(2)}"></td>
+              <td><input id="spends-usd-${day.date}" class="form-control smmStats" type="number" data-type="spends" data-date="${day.date}" value="${day.smm_spends_usd.toFixed(2)}"></td>
+              <td><input id="spends-uah-${day.date}" class="form-control smmStats" type="number" data-date="${day.date}" value="${day.smm_spends_uah.toFixed(2)}" disabled></td>
               <td><input class="form-control smmStats" type="number" step="0.1" data-type="coverage" data-date="${day.date}" value="${day.smm_coverage}"></td>
               <td><input class="form-control smmStats" type="number" step="0.1" data-type="clicks" data-date="${day.date}" value="${day.smm_clicks}"></td>
               <td><input class="form-control smmStats" type="number" step="0.1" data-type="direct_messages" data-date="${day.date}" value="${day.smm_direct_messages}"></td>
@@ -64,13 +76,14 @@ $(document).ready(function () {
         $(".smmStats").on("change", function () {
           const type = $(this).data("type");
           const date = $(this).data("date");
-          var value = $(this).val();
+          let value = $(this).val();
           const $revenue = $(`#revenue-${date}`);
-          const $marigin = $(`#margin-${date}`);
-          const $spends = $(`#spends-${date}`);
+          const $margin = $(`#margin-${date}`);
+          const $spends = $(`#spends-usd-${date}`);
+          const $spends_uah = $(`#spends-uah-${date}`);
 
           console.log($revenue);
-          console.log($marigin.text());
+          console.log($margin.text());
           console.log($spends);
 
           console.log(`CHANGED ${type} ${date} ${value}`)
@@ -86,7 +99,11 @@ $(document).ready(function () {
             contentType: "application/json",
             success: function (response) {
               console.log("Updated successfully:", response);
-              revenue = parseFloat($marigin.text()) - $spends.val();
+
+              let spends_uah = $spends.val() * parseFloat(response.usd_rate);
+              $spends_uah.val(spends_uah);
+
+              let revenue = parseFloat($margin.text()) - $spends_uah.val();
               $revenue.val(revenue);
             },
             error: function (xhr) {
@@ -96,5 +113,8 @@ $(document).ready(function () {
         });
       },
     });
-  });
+  }
+
+  $startDate.on("change", DateFilterChange);
+  $endDate.on("change", DateFilterChange);
 });
