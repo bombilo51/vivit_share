@@ -1,3 +1,3 @@
 .venv/
-dev.db
+*.db
 *.pyc
