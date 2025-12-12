@@ -1,48 +1,64 @@
 {% extends "base.html" %}
 
 {% block title %}
-Monthly Stats
+    Monthly Stats
 {% endblock %}
 
 {% block head %}
-<link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css"/>
 {% endblock head %}
 
 {% block content %}
-<h2>Статистика</h2>
-<a href="{{ url_for('analytics.summary') }}">Звіт</a>
+    <h2>Статистика</h2>
+    <a href="{{ url_for('analytics.summary') }}">Звіт</a>
     <div class="row">
         <div class="col-md-3">
             <label for="startDateFilter" class="form-label"><strong>З: </strong></label>
-            <input type="text" class="form-control" id="startDateFilter" name="startDate" placeholder="Select date" autocomplete="off" />
+            <input type="text" class="form-control" id="startDateFilter" name="startDate" placeholder="Select date"
+                   autocomplete="off"/>
         </div>
         <div class="col-md-3">
             <label for="endDateFilter" class="form-label"><strong>По: </strong></label>
-            <input type="text" class="form-control" id="endDateFilter" name="endDate" placeholder="Select date" autocomplete="off" />
+            <input type="text" class="form-control" id="endDateFilter" name="endDate" placeholder="Select date"
+                   autocomplete="off"/>
         </div>
     </div>
 
 
-<table id="statsTable" class="table">
-    <thead>
-        <th>День</th>
-        <th>К-сть замовлень</th>
-        <th>Сума продажів</th>
-        <th>Маржа</th>
-        <th>Витрати на рекламу (USD)</th>
-        <th>Витрати на рекламу (UAH)</th>
-        <th>Охоплення</th>
-        <th>Кліки</th>
-        <th>Звернення</th>
-        <th>Прибуток</th>
-    </thead>
-    <tbody></tbody>
-</table>
+    <table id="statsTable" class="table">
+        <thead>
+        <tr>
+            <th>День</th>
+            <th>К-сть замовлень</th>
+            <th>Сума продажів</th>
+            <th>Маржа</th>
+            <th>Витрати на рекламу (USD)</th>
+            <th>Витрати на рекламу (UAH)</th>
+            <th>Охоплення</th>
+            <th>Кліки</th>
+            <th>Звернення</th>
+            <th>Прибуток</th>
+        </tr>
+        <tr style="background: rgba(80,80,80,0.26)">
+            <th id="sum-day"></th>
+            <th id="sum-orders-count" data-type=""></th>
+            <th id="sum-sales" data-type=""></th>
+            <th id="sum-margin" data-type=""></th>
+            <th id="sum-spends-usd" data-type=""></th>
+            <th id="sum-spends-uah" data-type=""></th>
+            <th id="sum-coverage" data-type=""></th>
+            <th id="sum-clicks" data-type=""></th>
+            <th id="sum-dms" data-type=""></th>
+            <th id="sum-revenue" data-type=""></th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 {% endblock content %}
 
 {% block scripts %}
-<script
-    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
-<script src="{{ url_for('static', filename='js/analytics/stats.js') }}"></script>
+    <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+    <script src="{{ url_for('static', filename='js/analytics/stats.js') }}"></script>
 {% endblock scripts %}

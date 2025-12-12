@@ -16,4 +16,6 @@ def get_usd_uah_rate(d: date | None = None) -> float:
     if not data:
         raise ValueError("Empty response from NBU API")
 
-    return float(data[0]["rate"])
+    rate = float(data[0]["rate"])
+    print(f"Added rate [Date : {d} | Rate : {rate}]")
+    return rate

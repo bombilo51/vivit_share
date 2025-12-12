@@ -7,6 +7,7 @@ from ..models import Order, Product, SMMStats, OrderItem
 from . import analytics
 from ..utils import get_usd_uah_rate
 
+
 @analytics.route("/stats", methods=["GET"])
 @login_required
 def stats():
@@ -23,8 +24,8 @@ def get_monthly_stats():
     if not start_date or not end_date:
         return jsonify({"error": "month parameter required"}), 400
 
-    start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-    end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+    start_date = datetime.strptime(start_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0)
+    end_date = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
 
     order_data = (
         db.session.query(
@@ -45,9 +46,7 @@ def get_monthly_stats():
         .join(Product, Product.id == OrderItem.product_id)
         .filter(
             Order.created_at >= start_date,
-            Order.created_at < end_date,
-            # optionally:
-            # Order.status == "completed"
+            Order.created_at <= end_date,
         )
         .group_by(func.date(Order.created_at))
         .order_by(func.date(Order.created_at))
@@ -65,7 +64,7 @@ def get_monthly_stats():
 
     smm_data = (
         db.session.query(SMMStats)
-        .filter(SMMStats.date >= start_date, SMMStats.date < end_date)
+        .filter(SMMStats.date >= start_date.date(), SMMStats.date <= end_date.date())
         .all()
     )
     smm_by_day = {sd.date: sd for sd in smm_data}
@@ -75,18 +74,18 @@ def get_monthly_stats():
 
     while day <= end_date:
         order_info = orders_by_day.get(
-            day, {"order_count": 0, "total_sales": 0.0, "total_margin": 0.0}
+            day.date(), {"order_count": 0, "total_sales": 0.0, "total_margin": 0.0}
         )
-        smm_info = smm_by_day.get(day)
+
+        smm_info = smm_by_day.get(day.date())
 
         if smm_info and not smm_info.usd_rate:
             smm_info.usd_rate = get_usd_uah_rate(day)
-            print(f"Added rate Date : {day} | Rate : {smm_info.usd_rate}")
             db.session.commit()
 
         days.append(
             {
-                "date": day.isoformat(),
+                "date": day.date().isoformat(),
                 "order_count": order_info["order_count"],
                 "total_sales": order_info["total_sales"],
                 "total_margin": order_info["total_margin"],
@@ -95,7 +94,8 @@ def get_monthly_stats():
                 "smm_coverage": smm_info.coverage if smm_info else 0,
                 "smm_clicks": smm_info.clicks if smm_info else 0,
                 "smm_direct_messages": smm_info.direct_messages if smm_info else 0,
-                "revenue": order_info["total_margin"] - (float(smm_info.spends) * float(smm_info.usd_rate) if smm_info else 0.0),
+                "revenue": order_info["total_margin"] - (
+                    float(smm_info.spends) * float(smm_info.usd_rate) if smm_info else 0.0),
             }
         )
 
@@ -111,7 +111,6 @@ def update_smm_stat():
     field = data.get("type")
     day = data.get("date")
     value = data.get("value")
-    usd_rate = SMMStats.query.filter_by(date=day).first().usd_rate
 
     if not (day and field and value):
         return jsonify({"error": "Missing required parameters"}), 400
@@ -125,8 +124,11 @@ def update_smm_stat():
     stat = SMMStats.query.filter_by(date=day_date).first()
     if not stat:
         stat = SMMStats(date_value=day_date)
+        usd_rate = get_usd_uah_rate(day_date)
+        stat.usd_rate = usd_rate
         db.session.add(stat)
-
+    else:
+        usd_rate = SMMStats.query.filter_by(date=day_date).first().usd_rate
     if hasattr(stat, field):
         setattr(stat, field, value)
     else:
@@ -141,60 +143,64 @@ def update_smm_stat():
         "usd_rate": usd_rate
     })
 
+
 @analytics.route("/summary", methods=["GET", "POST"])
 @login_required
 def summary():
     if request.method == "POST":
         json = request.get_json()
-        start_date = json["startDate"]
-        end_date = json["endDate"]
+        start_date_row = json["startDate"]
+        end_date_row = json["endDate"]
 
-        data = (
-            db.session.query(
-                func.date(Order.created_at).label("day"),
+        start_date = datetime.strptime(start_date_row, "%Y-%m-%d").replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = (datetime.strptime(end_date_row, "%Y-%m-%d") + timedelta(days=1)).replace(hour=0, minute=0, second=0,
+                                                                                             microsecond=0)
 
-                func.sum(SMMStats.spends).label("total_spends"),
-                func.sum(SMMStats.coverage).label("total_coverage"),
-                func.sum(SMMStats.clicks).label("total_clicks"),
-
-                func.count(Order.id).label("total_sales"),
-
-                func.sum(SMMStats.direct_messages).label("total_orders"),
-
-                func.sum(OrderItem.unit_price * OrderItem.quantity).label("sum_sales"),
-
-                func.sum(
-                    OrderItem.quantity * OrderItem.unit_price
-                    - (Product.cost * OrderItem.quantity)
-                ).label("margin"),
-            )
-            .join(OrderItem, Order.id == OrderItem.order_id)
-            .join(Product, Product.id == OrderItem.product_id)
-            .join(SMMStats, SMMStats.order_id == Order.id)  # <-- make sure this condition is correct
+        order = (
+            db.session.query(func.count(Order.id).label("total_sales"))
             .filter(
                 Order.created_at >= start_date,
                 Order.created_at < end_date,
             )
-            .group_by(func.date(Order.created_at))  # <-- required for the aggregates
-            .order_by(func.date(Order.created_at))  # <-- optional but usually desirable
-            .all()
+            .one()
         )
-        
-        row = data.pop()
-        
-        
+
+        smm = (
+            db.session.query(
+                func.coalesce(func.sum(SMMStats.spends), 0).label("total_spends"),
+                func.coalesce(func.sum(SMMStats.coverage), 0).label("total_coverage"),
+                func.coalesce(func.sum(SMMStats.clicks), 0).label("total_clicks"),
+                func.coalesce(func.sum(SMMStats.direct_messages), 0).label("total_orders"),
+                func.coalesce(
+                    func.sum(SMMStats.spends * SMMStats.usd_rate),
+                    0
+                ).label("total_spends_uah"),
+            )
+            .filter(
+                SMMStats.date >= start_date,
+                SMMStats.date <= end_date,
+            )
+            .one()
+        )
+
+        if not order or not smm:
+            return jsonify({
+                "status": "error",
+                "error": "Bad data provided"
+            })
+
         return jsonify({
-            "total_spends": row.total_spends,
-            "total_coverage": row.total_coverage,
-            "total_clicks": row.total_clicks,
-            "total_sales": row.total_sales,
-            "sum_sales": row.sum_sales,
-            "total_orders" : row.total_orders,
-            "margin": row.margin,
-            "revenue": row.margin - row.total_spends,
-            "convert": ((row.total_sales / row.total_orders ) * 100) if row.total_orders else 0.0,
-            "roas": row.total_spends,    
-            "order_price_average": row.total_spends, 
+            "status": "success",
+            "total_spends": smm.total_spends_uah,
+            "total_coverage": smm.total_coverage,
+            "total_clicks": smm.total_clicks,
+            "total_sales": order.total_sales,
+            # "sum_sales": order.sum_sales,
+            "total_orders": smm.total_orders,
+            # "margin": order.margin,
+            # "revenue": order.margin - smm.total_spends,
+            "convert": ((order.total_sales / smm.total_orders) * 100) if smm.total_orders else 0.0,
+            "roas": smm.total_spends,
+            "order_price_average": smm.total_spends,
         })
     return render_template("analytics/sum.html")
-        
