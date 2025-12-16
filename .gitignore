@@ -2,3 +2,4 @@
 *.db
 *.pyc
 .idea
+app/config.py
