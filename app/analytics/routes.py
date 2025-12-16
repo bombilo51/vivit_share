@@ -157,11 +157,12 @@ def summary():
                                                                                              microsecond=0)
 
         order = (
-            db.session.query(func.count(Order.id).label("total_sales"))
-            .filter(
-                Order.created_at >= start_date,
-                Order.created_at < end_date,
+            db.session.query(
+                func.count(func.distinct(Order.id)).label("total_sales"),
+                func.coalesce(func.sum(OrderItem.quantity * OrderItem.unit_price), 0).label("sum_sales"),
             )
+            .join(OrderItem, Order.id == OrderItem.order_id)
+            .filter(Order.created_at >= start_date, Order.created_at < end_date)
             .one()
         )
 
@@ -195,7 +196,7 @@ def summary():
             "total_coverage": smm.total_coverage,
             "total_clicks": smm.total_clicks,
             "total_sales": order.total_sales,
-            # "sum_sales": order.sum_sales,
+            "sum_sales": order.sum_sales,
             "total_orders": smm.total_orders,
             # "margin": order.margin,
             # "revenue": order.margin - smm.total_spends,
