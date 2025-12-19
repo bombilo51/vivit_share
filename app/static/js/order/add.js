@@ -1,5 +1,12 @@
 $(document).ready(function () {
 
+    $('.searchable-select').select2({
+        placeholder: 'Select Product',
+        theme: 'bootstrap-5',
+        allowClear: false,
+        width: '100%'
+    });
+
     $("#orderDate").datepicker({
         format: "yyyy-mm-dd", // ISO-friendly format
         autoclose: true,
@@ -10,7 +17,7 @@ $(document).ready(function () {
     if ($("#orderDate").val() == '') {
         $("#orderDate").datepicker("setDate", new Date());
     }
-    
+
     const $tableBody = $('#orderItemsBody');
     const $grandTotal = $('#grandTotal');
 
@@ -55,14 +62,34 @@ $(document).ready(function () {
 
     function addNewRow() {
         const $templateRow = $tableBody.find('.orderItemRow:first');
+
+        $templateRow.find('.product-select').select2('destroy');
+
         const $newRow = $templateRow.clone();
 
         $newRow.find('input').val('');
-        $newRow.find('.product-select').val('').trigger('change');
+        $newRow.find('.product-select').val('');
         $newRow.find('.remove-item-btn').removeClass('d-none');
 
         $tableBody.append($newRow);
+
+        // Re-init template row
+        $templateRow.find('.product-select').select2({
+            placeholder: 'Select Product',
+            theme: 'bootstrap-5',
+            allowClear: false,
+            width: '100%'
+        });
+
+        // Init new row only
+        $newRow.find('.product-select').select2({
+            placeholder: 'Select Product',
+            theme: 'bootstrap-5',
+            allowClear: false,
+            width: '100%'
+        });
     }
+
 
     function maybeAddNewRow($row) {
         const product = $row.find('.product-select').val();

@@ -5,6 +5,8 @@
 {% block head %}
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css"/>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/order/add.css') }}">
 {% endblock head %}
 
 {% block content %}
@@ -33,7 +35,7 @@
             <tbody id="orderItemsBody">
             <tr class="orderItemRow">
                 <td>
-                    <select name="product[]" class="form-select product-select">
+                    <select name="product[]" class="form-select product-select searchable-select">
                         <option value="">Select Product</option>
                         {% for product in products %}
                             <option value="{{ product.id }}" data-price="{{ product.price }}"
@@ -81,5 +83,6 @@
 {% block scripts %}
     <script
             src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="{{ url_for('static', filename='js/order/add.js') }}"></script>
 {% endblock %}
