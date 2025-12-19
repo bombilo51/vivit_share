@@ -5,10 +5,10 @@
 
 
 {% block content %}
-<h1>Order List</h1>
-<a href="{{ url_for('order.add_order') }}" class="btn btn-primary mb-3">Add New Order</a>
-<table class="table">
-    <thead>
+    <h1>Order List</h1>
+    <a href="{{ url_for('order.add_order') }}" class="btn btn-primary mb-3">Add New Order</a>
+    <table class="table">
+        <thead>
         <tr>
             <th>Order ID</th>
             <th>Date</th>
@@ -16,22 +16,36 @@
             <th>Total Price</th>
             <th></th>
         </tr>
+        </thead>
+        <tbody>
         <tr>
             <th></th>
             <th></th>
-            <th>Product / Quantity / Unit Price / Total Price</th>
+            <th>
+                <table class="table table-sm table-borderless mb-0">
+                    <colgroup>
+                        <col class="w-25">
+                        <col class="w-25">
+                        <col class="w-25">
+                        <col class="w-25">
+                    </colgroup>
+                    <tr>
+                        <td>Product</td>
+                        <td>Quantity</td>
+                        <td>Price</td>
+                        <td>Total Margin</td>
+                    </tr>
+                </table>
+            </th>
             <th></th>
             <th></th>
             <th></th>
         </tr>
-    </thead>
-    <tbody>
         {% for order in orders %}
-        <tr id="orderRow-{{order.id}}">
-            <td>{{ order.id }}</td>
-            <td>{{ order.created_at.strftime('%d-%m-%Y %H:%M:%S') }}</td>
-            <td>
-                <ul class="list-group">
+            <tr id="orderRow-{{ order.id }}">
+                <td>{{ order.id }}</td>
+                <td>{{ order.created_at.strftime('%d-%m-%Y %H:%M:%S') }}</td>
+                <td>
                     <table class="table table-sm table-borderless mb-0">
                         <colgroup>
                             <col class="w-25">
@@ -40,27 +54,27 @@
                             <col class="w-25">
                         </colgroup>
                         {% for item in order.items %}
-                        <tr>
-                            <td>{{ item.product.name }}</td>
-                            <td>x{{ item.quantity }}</td>
-                            <td>{{ '%.2f' | format(item.unit_price) }} UAH</td>
-                            <td>{{ '%.2f' | format(item.unit_price * item.quantity) }} UAH</td>
-                        </tr>
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>x{{ item.quantity }}</td>
+                                <td>{{ '%.2f' | format(item.unit_price * item.quantity) }} UAH</td>
+                                <td>{{ '%.2f' | format(item.product.margin * item.quantity) }} UAH</td>
+                            </tr>
                         {% endfor %}
                     </table>
-                </ul>
-            </td>
-            <td>{{ '%.2f' | format(order.total) }} UAH</td>
-            <td>
-                <a href="{{ url_for('order.edit_order', order_id=order.id) }}" class="btn btn-sm btn-warning">Edit</a>
-                <a onclick="deleteOrder({{ order.id }})" class="btn btn-sm btn-danger">Delete</a>
-            </td>
-        </tr>
+                </td>
+                <td>{{ '%.2f' | format(order.total) }} UAH</td>
+                <td>
+                    <a href="{{ url_for('order.edit_order', order_id=order.id) }}"
+                       class="btn btn-sm btn-warning">Edit</a>
+                    <a onclick="deleteOrder({{ order.id }})" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
         {% endfor %}
-    </tbody>
-</table>
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/order/order_list.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/order/order_list.js') }}"></script>
 {% endblock %}

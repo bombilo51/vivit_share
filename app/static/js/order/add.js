@@ -19,14 +19,17 @@ $(document).ready(function () {
     function recalculateRow($row) {
         const quantity = parseFloat($row.find('.quantity-input').val()) || 0;
         const price = parseFloat($row.find('.unit-price-input').val()) || 0;
-        console.log('Recalculating row:', quantity, price);
+        const unit_margin = parseFloat($row.find('.unit-margin-input').val()) || 0;
+        console.log('Recalculating row:', quantity, price, unit_margin);
         const total = round(quantity * price);
+        const total_margin = unit_margin * quantity;
         $row.find('.total-price-input').val(total ? round(total).toFixed(2) : '');
+        $row.find('.total-margin-input').val(total_margin ? round(total_margin).toFixed(2) : '');
     }
 
     function recalculateGrandMargin() {
         let grandMargin = 0;
-        $tableBody.find('.margin-input').each(function () {
+        $tableBody.find('.total-margin-input').each(function () {
             grandMargin += parseFloat($(this).val()) || 0;
         });
         $('#grandMargin').text(round(grandMargin).toFixed(2))
@@ -76,7 +79,8 @@ $(document).ready(function () {
         const margin = parseFloat($(this).find('option:selected').data('margin')) || 0;
         $row.find('.unit-price-input').val(price ? round(price).toFixed(2) : '');
         $row.find('.quantity-input').val(price ? '1' : '');
-        $row.find('.margin-input').val(margin ? margin : '');
+        $row.find('.unit-margin-input').val(margin ? margin : '');
+        $row.find('.total-margin-input').val(margin ? margin : '');
         recalculateRow($row);
         recalculateGrandTotal();
         maybeAddNewRow($row);

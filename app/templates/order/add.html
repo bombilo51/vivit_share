@@ -3,76 +3,83 @@
 {% block title %}Orders{% endblock %}
 
 {% block head %}
-<link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css"/>
 {% endblock head %}
 
 {% block content %}
-<h1>Add New Order</h1>
-<form method="post" action="{{ url_for('order.add_order') }}">
-    <div class="row">
-        <div class="col-md-3">
-            <label for="orderDate" class="form-label"><strong>Date</strong></label>
-            <input type="text" class="form-control" id="orderDate" name="date" placeholder="Select date"
-                autocomplete="off" />
+    <h1>Add New Order</h1>
+    <form method="post" action="{{ url_for('order.add_order') }}">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="orderDate" class="form-label"><strong>Date</strong></label>
+                <input type="text" class="form-control" id="orderDate" name="date" placeholder="Select date"
+                       autocomplete="off"/>
+            </div>
         </div>
-    </div>
 
-    <table class="table">
-        <thead>
+        <table class="table">
+            <thead>
             <tr>
                 <th>Product</th>
                 <th>Quantity</th>
                 <th>Unit Price</th>
                 <th>Margin</th>
                 <th>Total Price</th>
+                <th>Total Margin</th>
                 <th></th>
             </tr>
-        </thead>
-        <tbody id="orderItemsBody">
+            </thead>
+            <tbody id="orderItemsBody">
             <tr class="orderItemRow">
                 <td>
                     <select name="product[]" class="form-select product-select">
                         <option value="">Select Product</option>
                         {% for product in products %}
-                        <option value="{{ product.id }}" data-price="{{ product.price }}"
-                            data-margin="{{ product.margin }}">{{ product.name }}</option>
+                            <option value="{{ product.id }}" data-price="{{ product.price }}"
+                                    data-margin="{{ product.margin }}">{{ product.name }}</option>
                         {% endfor %}
                     </select>
                 </td>
                 <td><input type="number" name="quantity[]" class="form-control quantity-input" value="" min="1"></td>
                 <td><input type="number" name="unitPrice[]" class="form-control unit-price-input" step="0.01"
-                        value="0.00" min="0"></td>
-                <td><input type="number" name="margin[]" class="form-control margin-input" step="0.01" value="0.00"
-                        min="0" disabled></td>
+                           value="0.00" min="0"></td>
+                <td><input type="number" name="margin[]" class="form-control unit-margin-input" step="0.01" value="0.00"
+                           min="0" disabled></td>
+                </td>
                 </td>
                 <td><input type="number" name="totalPrice[]" class="form-control total-price-input" step="0.01"
-                        value="0.00"></td>
+                           value="0.00"></td>
+                <td><input type="number" name="total_margin[]" class="form-control total-margin-input" step="0.01"
+                           value="0.00"
+                           min="0" disabled></td>
 
-                <td><button type="button" class="btn btn-danger btn-sm remove-item-btn d-none">Remove</button></td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-item-btn d-none">Remove</button>
+                </td>
             </tr>
-        </tbody>
-    </table>
+            </tbody>
+        </table>
 
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <div class="col">
-            <div class="row">
-                <div><strong>Grand Total:</strong> <span id="grandTotal">0.00</span> UAH</div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="col">
+                <div class="row">
+                    <div><strong>Grand Total:</strong> <span id="grandTotal">0.00</span> UAH</div>
+                </div>
+
+                <div class="row">
+                    <div><strong>Grand Margin:</strong> <span id="grandMargin">0.00</span> UAH</div>
+                </div>
             </div>
 
-            <div class="row">
-                <div><strong>Grand Margin:</strong> <span id="grandMargin">0.00</span> UAH</div>
-            </div>
+
+            <button type="submit" class="btn btn-primary">Submit Order</button>
         </div>
-
-
-        <button type="submit" class="btn btn-primary">Submit Order</button>
-    </div>
-</form>
+    </form>
 {% endblock %}
 
 {% block scripts %}
-<script
-    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
-<script src="{{ url_for('static', filename='js/order/add.js') }}"></script>
+    <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+    <script src="{{ url_for('static', filename='js/order/add.js') }}"></script>
 {% endblock %}
