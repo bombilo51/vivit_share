@@ -11,7 +11,11 @@ from ..utils import normalize_text
 @login_required
 def products_list():
 
+    products = Product.query.all()
+    for p in products:
+        p.name_search = normalize_text(p.name)
 
+    db.session.commit()
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
