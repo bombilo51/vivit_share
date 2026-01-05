@@ -28,6 +28,7 @@ class Product(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    name_search = db.Column(db.String(255), index=True, nullable=True, default="")
     cost = db.Column(Numeric(10, 2), nullable=False)
     margin = db.Column(Numeric(10, 2), nullable=True)
 
@@ -96,6 +97,14 @@ class Order(db.Model):
         for item in self.items:
             total += Decimal(item.quantity) * Decimal(item.unit_price)
         return total
+
+    @property
+    def total_margin(self):
+        total_margin = Decimal("0")
+        for item in self.items:
+            total_margin += int(item.quantity) * Decimal(item.product.margin)
+        return total_margin
+
 
     def to_dict(self):
         return {

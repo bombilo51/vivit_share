@@ -5,11 +5,14 @@ from sqlalchemy import asc, desc, func
 from . import product
 from ..extensions import db
 from ..models import Product
-
+from ..utils import normalize_text
 
 @product.route("/products_list")
 @login_required
 def products_list():
+
+
+
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
@@ -21,7 +24,7 @@ def products_list():
     query = Product.query
 
     if q:
-        query = query.filter(func.lower(Product.name).contains(q.lower()))
+        query = query.filter(Product.name_search.contains(normalize_text(q)))
 
     sort_map = {
         "id": Product.id,

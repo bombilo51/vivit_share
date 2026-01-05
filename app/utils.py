@@ -1,5 +1,23 @@
 import requests
+import re
 from datetime import date
+from sqlalchemy import event
+from .models import Product
+
+def normalize_text(s: str) -> str:
+    if not s:
+        return ""
+    s = s.strip()
+    s = re.sub(r"\s+", " ", s)      # collapse multiple spaces
+    return s.casefold()             # Unicode-aware lowercasing
+
+@event.listens_for(Product, "before_insert")
+def product_before_insert(mapper, connection, target):
+    target.name_search = normalize_text(target.name)
+
+@event.listens_for(Product, "before_update")
+def product_before_update(mapper, connection, target):
+    target.name_search = normalize_text(target.name)
 
 def get_usd_uah_rate(d: date | None = None) -> float:
     base_url = "https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange"

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Orders{% endblock %}
+{% block title %}Замовлення{% endblock %}
 
 {% block head %}
     <link rel="stylesheet"
@@ -10,12 +10,12 @@
 {% endblock head %}
 
 {% block content %}
-    <h1>Add New Order</h1>
+    <h1>РЕДАГУВАННЯ ЗАМОВЛЕННЯ</h1>
     <form method="post" action="{{ url_for('order.edit_order', order_id=order.id) }}">
         <div class="row">
             <div class="col-md-3">
-                <label for="orderDate" class="form-label"><strong>Date</strong></label>
-                <input type="text" class="form-control" id="orderDate" name="date" placeholder="Select date"
+                <label for="orderDate" class="form-label"><strong>Дата</strong></label>
+                <input type="text" class="form-control" id="orderDate" name="date" placeholder="Оберіть дату"
                        autocomplete="off" value="{{ order.created_at }}"/>
             </div>
         </div>
@@ -23,11 +23,12 @@
         <table class="table">
             <thead>
             <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Margin</th>
-                <th>Total Price</th>
+                <th>Товар</th>
+                <th>К-сть</th>
+                <th>Ціна одиниці</th>
+                <th>Маржа одиниці</th>
+                <th>Загальна вартість</th>
+                <th>Загальна маржа</th>
                 <th></th>
             </tr>
             </thead>
@@ -36,7 +37,7 @@
                 <tr class="orderItemRow">
                     <td>
                         <select name="product[]" class="form-select product-select searchable-select">
-                            <option value="">Select Product</option>
+                            <option value="">Оберіть Товар</option>
                             {% for product in products %}
                                 {% if item.product_id == product.id %}
                                     <option value="{{ product.id }}" data-price="{{ product.price }}"
@@ -53,20 +54,23 @@
                                value="{{ item.quantity }}" min="1"></td>
                     <td><input type="number" name="unitPrice[]" class="form-control unit-price-input" step="0.01"
                                value="{{ item.unit_price }}" min="0"></td>
-                    <td><input type="number" name="margin[]" class="form-control margin-input" step="0.01"
+                    <td><input type="number" name="margin[]" class="form-control unit-margin-input" step="0.01"
                                value="{{ item.product.margin }}"
                                min="0" disabled></td>
                     <td><input type="number" name="totalPrice[]" class="form-control total-price-input" step="0.01"
                                value="{{ item.quantity * item.unit_price }}"></td>
+                    <td><input type="number" name="total_margin[]" class="form-control total-margin-input" step="0.01"
+                               value="0.00"
+                               min="0" disabled></td>
                     <td>
-                        <button type="button" class="btn btn-danger btn-sm remove-item-btn">Remove</button>
+                        <button type="button" class="btn btn-danger btn-sm remove-item-btn">Видалити</button>
                     </td>
                 </tr>
             {% endfor %}
             <tr class="orderItemRow">
                 <td>
                     <select name="product[]" class="form-select product-select">
-                        <option value="">Select Product</option>
+                        <option value="">Оберіть Товар</option>
                         {% for product in products %}
                             <option value="{{ product.id }}" data-price="{{ product.price }}"
                                     data-margin="{{ product.margin }}">{{ product.name }}</option>
@@ -80,16 +84,27 @@
                            min="0" disabled></td>
                 <td><input type="number" name="totalPrice[]" class="form-control total-price-input" step="0.01"
                            value="0.00"></td>
+                <td><input type="number" name="total_margin[]" class="form-control total-margin-input" step="0.01"
+                           value="0.00"
+                           min="0" disabled></td>
                 <td>
-                    <button type="button" class="btn btn-danger btn-sm remove-item-btn">Remove</button>
+                    <button type="button" class="btn btn-danger btn-sm remove-item-btn">Видалити</button>
                 </td>
             </tr>
             </tbody>
         </table>
 
         <div class="d-flex justify-content-between align-items-center mt-3">
-            <div><strong>Grand Total:</strong> <span id="grandTotal">0.00</span> UAH</div>
-            <button type="submit" class="btn btn-primary">Submit Order</button>
+            <div class="col">
+                <div class="row">
+                    <div><strong>Сума замовлення:</strong> <span id="grandTotal">0.00</span> UAH</div>
+                </div>
+
+                <div class="row">
+                    <div><strong>Маржа замовлення:</strong> <span id="grandMargin">0.00</span> UAH</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Підтвердити зміни</button>
         </div>
     </form>
 {% endblock %}

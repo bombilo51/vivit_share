@@ -1,21 +1,23 @@
-$(document).ready(function () {
+$(function () {
 
     $('.searchable-select').select2({
-        placeholder: 'Select Product',
+        placeholder: 'Оберіть Товар',
         theme: 'bootstrap-5',
         allowClear: false,
         width: '100%'
     });
 
-    $("#orderDate").datepicker({
+    const $orderDate = $("#orderDate");
+
+    $orderDate.datepicker({
         format: "yyyy-mm-dd", // ISO-friendly format
         autoclose: true,
         todayHighlight: true,
         weekStart: 1, // Monday
     });
 
-    if ($("#orderDate").val() == '') {
-        $("#orderDate").datepicker("setDate", new Date());
+    if ($orderDate.val() === '') {
+        $orderDate.datepicker("setDate", new Date());
     }
 
     const $tableBody = $('#orderItemsBody');
@@ -75,7 +77,7 @@ $(document).ready(function () {
 
         // Re-init template row
         $templateRow.find('.product-select').select2({
-            placeholder: 'Select Product',
+            placeholder: 'Оберіть Товар',
             theme: 'bootstrap-5',
             allowClear: false,
             width: '100%'
@@ -83,13 +85,12 @@ $(document).ready(function () {
 
         // Init new row only
         $newRow.find('.product-select').select2({
-            placeholder: 'Select Product',
+            placeholder: 'Оберіть Товар',
             theme: 'bootstrap-5',
             allowClear: false,
             width: '100%'
         });
     }
-
 
     function maybeAddNewRow($row) {
         const product = $row.find('.product-select').val();
@@ -132,4 +133,12 @@ $(document).ready(function () {
         $row.remove();
         recalculateGrandTotal();
     });
+
+    const $rows = $(".orderItemRow .quantity-input")
+
+    $rows.trigger('input');
+
+    console.log($rows)
+
+
 });

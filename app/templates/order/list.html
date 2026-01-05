@@ -1,78 +1,101 @@
 {% extends "base.html" %}
 
-{% block title %}Orders{% endblock %}
+{% block title %}Замовлення{% endblock %}
 
 
 
 {% block content %}
-    <h1>Order List</h1>
-    <a href="{{ url_for('order.add_order') }}" class="btn btn-primary mb-3">Add New Order</a>
-    <table class="table">
-        <thead>
-        <tr>
-            <th>Order ID</th>
-            <th>Date</th>
-            <th>Items</th>
-            <th>Total Price</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <th></th>
-            <th></th>
-            <th>
-                <table class="table table-sm table-borderless mb-0">
-                    <colgroup>
-                        <col class="w-25">
-                        <col class="w-25">
-                        <col class="w-25">
-                        <col class="w-25">
-                    </colgroup>
-                    <tr>
-                        <td>Product</td>
-                        <td>Quantity</td>
-                        <td>Price</td>
-                        <td>Total Margin</td>
-                    </tr>
-                </table>
-            </th>
-            <th></th>
-            <th></th>
-            <th></th>
-        </tr>
-        {% for order in orders %}
-            <tr id="orderRow-{{ order.id }}">
-                <td>{{ order.id }}</td>
-                <td>{{ order.created_at.strftime('%d-%m-%Y %H:%M:%S') }}</td>
-                <td>
+    <div class="row">
+        <h1>Замовлення</h1>
+        <div class="col">
+            <a href="{{ url_for('order.add_order') }}" class="btn btn-primary mb-3"> <i class="bi bi-plus-circle"></i> Додати нове</a>
+        </div>
+    </div>
+
+    <div class="row">
+
+
+        <table class="table">
+            <colgroup>
+                <col style="width: 5%">
+                <col style="width: 10%">
+                <col style="width: 55%">
+                <col style="width: 10%">
+                <col style="width: 10%">
+                <col style="width: 10%">
+            </colgroup>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Дата</th>
+                <th>Товари</th>
+                <th>Загальна вартість</th>
+                <th>Загальна маржа</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <th></th>
+                <th></th>
+                <th>
                     <table class="table table-sm table-borderless mb-0">
                         <colgroup>
-                            <col class="w-25">
-                            <col class="w-25">
-                            <col class="w-25">
-                            <col class="w-25">
+                            <col style="width: 50%">
+                            <col style="width: 10%">
+                            <col style="width: 20%">
+                            <col style="width: 20%">
                         </colgroup>
-                        {% for item in order.items %}
-                            <tr>
-                                <td>{{ item.product.name }}</td>
-                                <td>x{{ item.quantity }}</td>
-                                <td>{{ '%.2f' | format(item.unit_price * item.quantity) }} UAH</td>
-                                <td>{{ '%.2f' | format(item.product.margin * item.quantity) }} UAH</td>
-                            </tr>
-                        {% endfor %}
+                        <tr>
+                            <td>Назва</td>
+                            <td>К-сть</td>
+                            <td>Ціна</td>
+                            <td>Маржа (сума)</td>
+                        </tr>
                     </table>
-                </td>
-                <td>{{ '%.2f' | format(order.total) }} UAH</td>
-                <td>
-                    <a href="{{ url_for('order.edit_order', order_id=order.id) }}"
-                       class="btn btn-sm btn-warning">Edit</a>
-                    <a onclick="deleteOrder({{ order.id }})" class="btn btn-sm btn-danger">Delete</a>
-                </td>
+                </th>
+                <th></th>
+                <th></th>
+                <th></th>
             </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+            {% for order in orders %}
+                <tr id="orderRow-{{ order.id }}">
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.created_at.strftime('%d-%m-%Y %H:%M:%S') }}</td>
+                    <td>
+                        <table class="table table-sm table-borderless mb-0">
+                            <colgroup>
+                                <col style="width: 50%">
+                                <col style="width: 10%">
+                                <col style="width: 20%">
+                                <col style="width: 20%">
+                            </colgroup>
+                            {% for item in order.items %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>x{{ item.quantity }}</td>
+                                    <td>{{ '%.2f' | format(item.unit_price * item.quantity) }} </td>
+                                    <td>{{ '%.2f' | format(item.product.margin * item.quantity) }} </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </td>
+                    <td>{{ '%.2f' | format(order.total) }} </td>
+                    <td>{{ '%.2f' | format(order.total_margin) }} </td>
+                    <td>
+                        <a href="{{ url_for('order.edit_order', order_id=order.id) }}"
+                           class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a onclick="deleteOrder({{ order.id }})" class="btn btn-sm btn-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
 
 {% block scripts %}
