@@ -22,7 +22,7 @@
                 </div>
 
                 <div class="col-md-2">
-                    <label for="per_page" class="form-label">Per page</label>
+                    <label for="per_page" class="form-label">Товарів на сторінці:</label>
                     <select id="per_page" name="per_page" class="form-select">
                         {% for n in [10,20,50,100] %}
                             <option value="{{ n }}" {% if filters.per_page==n %}selected{% endif %}>{{ n }}</option>
