@@ -2,6 +2,8 @@ from decimal import Decimal
 from email.policy import default
 
 from sqlalchemy import Numeric
+from sqlalchemy.ext.hybrid import hybrid_property
+
 from .extensions import db
 from datetime import datetime, date
 from flask_login import UserMixin

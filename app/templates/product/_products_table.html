@@ -1,0 +1,92 @@
+{# Preserve args, but avoid duplicates when building sort links #}
+{% set args = request.args.to_dict() %}
+{% if args.pop('page', None) %}{% endif %}
+{% if args.pop('sort', None) %}{% endif %}
+{% if args.pop('direction', None) %}{% endif %}
+<div class="text-muted">Total: {{ pagination.total }}</div>
+<table class="table">
+    <thead>
+    <tr>
+        {% macro sort_th(label, column) %}
+            {% set is_active = filters.sort == column %}
+            {% set next_dir = 'desc' if is_active and filters.direction == 'asc' else 'asc' %}
+            <th>
+                <a class="js-sort text-decoration-none text-dark fw-semibold"
+                   style="cursor:pointer"
+                   href="{{ url_for('product.products_list', sort=column, direction=next_dir, **args) }}">
+                    {{ label }}
+                    {% if is_active %}
+                        {% if filters.direction == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+        {% endmacro %}
+
+        {{ sort_th('ID', 'id') }}
+        {{ sort_th('Name', 'name') }}
+        {{ sort_th('Cost', 'cost') }}
+        {{ sort_th('Margin', 'margin') }}
+        {{ sort_th('Price', 'price') }}
+        <th>Actions</th>
+    </tr>
+    </thead>
+
+    <tbody id="productTableBody">
+    {% for product in products %}
+        <tr id="productRow{{ product.id }}">
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.cost }}</td>
+            <td>{{ product.margin }}</td>
+            <td>{{ product.price }}</td>
+            <td>
+                <a href="{{ url_for('product.edit_product', product_id=product.id) }}"
+                   class="btn btn-sm btn-warning">Edit</a>
+                <a onclick="deleteProduct({{ product.id }})"
+                   class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if pagination.pages > 1 %}
+    {% set args2 = request.args.to_dict() %}
+    {% if args2.pop('page', None) %}{% endif %}
+
+    <div class="col-md-6 mx-auto">
+    <nav aria-label="Products pagination" class="mt-3">
+        <ul class="pagination">
+
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="js-page page-link"
+                   href="{{ url_for('product.products_list', page=pagination.prev_num, **args2) }}">
+                    Previous
+                </a>
+            </li>
+
+            {# Use iter_pages so we avoid max/min issues in Jinja #}
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="js-page page-link"
+                           href="{{ url_for('product.products_list', page=p, **args2) }}">
+                            {{ p }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+            {% endfor %}
+
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="js-page page-link"
+                   href="{{ url_for('product.products_list', page=pagination.next_num, **args2) }}">
+                    Next
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+    </div>
+{% endif %}

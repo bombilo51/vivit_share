@@ -1,5 +1,7 @@
 from flask import render_template, redirect, url_for, request
 from flask_login import login_required
+from sqlalchemy import asc, desc, func
+
 from . import product
 from ..extensions import db
 from ..models import Product
@@ -8,8 +10,49 @@ from ..models import Product
 @product.route("/products_list")
 @login_required
 def products_list():
-    products = Product.query.all()
-    return render_template("product/products_list.html", products=products)
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    q = request.args.get("q", "", type=str).strip()
+
+    sort = request.args.get("sort", "id", type=str)
+    direction = request.args.get("direction", "asc", type=str)
+
+    query = Product.query
+
+    if q:
+        query = query.filter(func.lower(Product.name).contains(q.lower()))
+
+    sort_map = {
+        "id": Product.id,
+        "name": Product.name,
+        "cost": Product.cost,
+        "margin": Product.margin,
+        "price": Product.price,
+    }
+    sort_col = sort_map.get(sort, Product.id)
+    sort_fn = desc if direction == "desc" else asc
+    query = query.order_by(sort_fn(sort_col))
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    context = dict(
+        products=pagination.items,
+        pagination=pagination,
+        filters={
+            "q": q,
+            "per_page": per_page,
+            "sort": sort,
+            "direction": direction,
+        },
+    )
+
+    # Detect AJAX request (jQuery sets this header)
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    if is_ajax:
+        return render_template("product/_products_table.html", **context)
+
+    return render_template("product/products_list.html", **context)
 
 
 @product.route("/product/<int:product_id>")
