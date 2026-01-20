@@ -4,115 +4,115 @@
 {% if args.pop('direction', None) %}{% endif %}
 
 <table class="table table-hover">
-  <colgroup>
-    <col style="width: 6%">
-    <col style="width: 16%">
-    <col style="width: 34%">
-    <col style="width: 8%">
-    <col style="width: 10%">
-    <col style="width: 10%">
-    <col style="width: 10%">
-    <col style="width: 6%">
-  </colgroup>
+    <colgroup>
+        <col style="width: 6%">
+        <col style="width: 16%">
+        <col style="width: 34%">
+        <col style="width: 8%">
+        <col style="width: 10%">
+        <col style="width: 10%">
+        <col style="width: 10%">
+        <col style="width: 6%">
+    </colgroup>
 
-  <thead>
+    <thead>
     <tr>
-      {% macro sort_th(label, column) %}
-        {% set is_active = filters.sort == column %}
-        {% set next_dir = 'desc' if is_active and filters.direction == 'asc' else 'asc' %}
-        <th>
-          <a class="js-sort text-decoration-none text-dark fw-semibold"
-             style="cursor:pointer"
-             href="{{ url_for('order.orders_list', sort=column, direction=next_dir, **args) }}">
-            {{ label }}
-            {% if is_active %}
-              {% if filters.direction == 'asc' %}▲{% else %}▼{% endif %}
-            {% endif %}
-          </a>
-        </th>
-      {% endmacro %}
+        {% macro sort_th(label, column) %}
+            {% set is_active = filters.sort == column %}
+            {% set next_dir = 'desc' if is_active and filters.direction == 'asc' else 'asc' %}
+            <th>
+                <a class="js-sort text-decoration-none text-dark fw-semibold"
+                   style="cursor:pointer"
+                   href="{{ url_for('order.orders_list', sort=column, direction=next_dir, **args) }}">
+                    {{ label }}
+                    {% if is_active %}
+                        {% if filters.direction == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+        {% endmacro %}
 
-      {{ sort_th('ID', 'id') }}
-      {{ sort_th('Дата', 'created_at') }}
-      <th>Товар</th>
-      <th>К-сть</th>
-      <th>Ціна</th>
-      <th>Маржа (сума)</th>
-      <th>Разом (замовлення)</th>
-      <th></th>
+        {{ sort_th('ID', 'id') }}
+        {{ sort_th('Дата', 'created_at') }}
+        <th>Товар</th>
+        <th>К-сть</th>
+        {{ sort_th('Ціна', 'total_price') }}
+        {{ sort_th('Маржа (сума)', 'total_margin') }}
+        {{ sort_th('Разом (замовлення)', 'grand_total') }}
+        <th></th>
     </tr>
-  </thead>
+    </thead>
 
-  <tbody>
+    <tbody>
     {% for order in orders %}
-      <tr class="order-head" id="orderRow-{{ order.id }}">
-        <td>{{ order.id }}</td>
-        <td>{{ order.created_at.strftime('%d-%m-%Y') }}</td>
-        <td></td>
-        <td></td>
-        <td>{{ (order.total) | money_space(2) }}</td>
-        <td>{{ (order.total_margin) | money_space(2) }}</td>
-        <td>{{ (order.total_margin + order.total) | money_space(2) }}</td>
-        <td class="actions">
-          <a href="{{ url_for('order.edit_order', order_id=order.id) }}" class="btn btn-sm btn-warning">
-            <i class="bi bi-pencil"></i>
-          </a>
-          <a onclick="deleteOrder({{ order.id }})" class="btn btn-sm btn-danger">
-            <i class="bi bi-trash"></i>
-          </a>
-        </td>
-      </tr>
-
-      {% for item in order.items %}
-        <tr class="order-item">
-          <td></td>
-          <td></td>
-          <td>{{ item.unit_name }}</td>
-          <td>x{{ item.quantity }}</td>
-          <td>{{ (item.unit_price * item.quantity) | money_space(2) }}</td>
-          <td>{{ (item.unit_margin * item.quantity) | money_space(2) }}</td>
-          <td></td>
-          <td></td>
+        <tr class="order-head" id="orderRow-{{ order.id }}">
+            <td>{{ order.id }}</td>
+            <td>{{ order.created_at.strftime('%d-%m-%Y') }}</td>
+            <td></td>
+            <td></td>
+            <td>{{ (order.total) | money_space(2) }}</td>
+            <td>{{ (order.total_margin) | money_space(2) }}</td>
+            <td>{{ (order.total_margin + order.total) | money_space(2) }}</td>
+            <td class="actions">
+                <a href="{{ url_for('order.edit_order', order_id=order.id) }}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <a onclick="deleteOrder({{ order.id }})" class="btn btn-sm btn-danger">
+                    <i class="bi bi-trash"></i>
+                </a>
+            </td>
         </tr>
-      {% endfor %}
+
+        {% for item in order.items %}
+            <tr class="order-item">
+                <td></td>
+                <td></td>
+                <td>{{ item.unit_name }}</td>
+                <td>x{{ item.quantity }}</td>
+                <td>{{ (item.unit_price * item.quantity) | money_space(2) }}</td>
+                <td>{{ (item.unit_margin * item.quantity) | money_space(2) }}</td>
+                <td></td>
+                <td></td>
+            </tr>
+        {% endfor %}
     {% endfor %}
-  </tbody>
+    </tbody>
 </table>
 
 {% if pagination.pages > 1 %}
-  {% set args2 = request.args.to_dict(flat=False) %}
-  {% if args2.pop('page', None) %}{% endif %}
+    {% set args2 = request.args.to_dict(flat=False) %}
+    {% if args2.pop('page', None) %}{% endif %}
 
-  <nav aria-label="Orders pagination" class="mt-3">
-    <ul class="pagination">
+    <nav aria-label="Orders pagination" class="mt-3">
+        <ul class="pagination">
 
-      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-        <a class="js-page page-link"
-           href="{{ url_for('order.orders_list', page=pagination.prev_num, **args2) }}">
-          Previous
-        </a>
-      </li>
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="js-page page-link"
+                   href="{{ url_for('order.orders_list', page=pagination.prev_num, **args2) }}">
+                    Previous
+                </a>
+            </li>
 
-      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-        {% if p %}
-          <li class="page-item {% if p == pagination.page %}active{% endif %}">
-            <a class="js-page page-link"
-               href="{{ url_for('order.orders_list', page=p, **args2) }}">{{ p }}</a>
-          </li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">…</span></li>
-        {% endif %}
-      {% endfor %}
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="js-page page-link"
+                           href="{{ url_for('order.orders_list', page=p, **args2) }}">{{ p }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+            {% endfor %}
 
-      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-        <a class="js-page page-link"
-           href="{{ url_for('order.orders_list', page=pagination.next_num, **args2) }}">
-          Next
-        </a>
-      </li>
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="js-page page-link"
+                   href="{{ url_for('order.orders_list', page=pagination.next_num, **args2) }}">
+                    Next
+                </a>
+            </li>
 
-    </ul>
-  </nav>
+        </ul>
+    </nav>
 
-  <div class="text-muted">Total orders: {{ pagination.total }}</div>
+    <div class="text-muted">Total orders: {{ pagination.total }}</div>
 {% endif %}

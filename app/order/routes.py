@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import login_required
-from sqlalchemy import desc, asc, func, distinct
+from sqlalchemy import desc, asc, func, distinct, case
 from sqlalchemy.orm import selectinload
 
 from . import order
@@ -18,25 +18,20 @@ def order_unit_names():
     term = request.args.get("term", "", type=str).strip()
     term_norm = normalize_text(term)
 
-    start = request.args.get("start", "", type=str).strip()  # YYYY-MM-DD
-    end = request.args.get("end", "", type=str).strip()  # YYYY-MM-DD
+    start = request.args.get("start", "", type=str).strip()
+    end = request.args.get("end", "", type=str).strip()
     order_id = request.args.get("order_id", "", type=str).strip()
 
-    # Current selected items (multi)
     selected = request.args.getlist("selected[]") or request.args.getlist("selected")
     selected_norm = sorted({normalize_text(x) for x in selected if normalize_text(x)})
 
-    # Base: unit_name values that appear in order_item
     base = (
         db.session.query(OrderItem.unit_name, OrderItem.unit_name_search)
         .join(Order, Order.id == OrderItem.order_id)
         .filter(OrderItem.unit_name_search.isnot(None))
     )
 
-    if selected_norm:
-        base = base.filter(~OrderItem.unit_name_search.in_(selected_norm))
-
-    # Apply optional order-level filters to options too (so options match current list filters)
+    # optional scope filters for suggestions
     if order_id and order_id.isdigit():
         base = base.filter(Order.id == int(order_id))
 
@@ -48,8 +43,7 @@ def order_unit_names():
         end_dt = datetime.strptime(end, "%Y-%m-%d") + timedelta(days=1)
         base = base.filter(Order.created_at < end_dt)
 
-    # If user already selected some items, only offer options that can co-exist with them
-    # i.e., options that appear in orders that contain ALL selected items.
+    # if already selected: only suggest compatible options + exclude selected
     if selected_norm:
         orders_with_all_selected = (
             db.session.query(OrderItem.order_id)
@@ -59,22 +53,23 @@ def order_unit_names():
             .subquery()
         )
         base = base.filter(OrderItem.order_id.in_(orders_with_all_selected))
+        base = base.filter(~OrderItem.unit_name_search.in_(selected_norm))
 
-    # Text search on options (case-insensitive via normalized column)
     if term_norm:
         base = base.filter(OrderItem.unit_name_search.contains(term_norm))
 
-    # Distinct options
     rows = (
         base.group_by(OrderItem.unit_name, OrderItem.unit_name_search)
-        .order_by(OrderItem.unit_name)
-        .limit(50)
-        .all()
+            .order_by(OrderItem.unit_name)
+            .limit(20)
+            .all()
     )
 
-    results = [{"id": name, "text": name} for name, _ in rows if name]
-    return jsonify({"results": results})
-
+    items = [name for name, _ in rows if name]
+    return jsonify({
+        "results": [{"id": name, "text": name} for name in items],
+        "items": items
+    })
 
 @order.route("/list", methods=["GET"])
 @login_required

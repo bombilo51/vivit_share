@@ -1,8 +1,12 @@
 $(function () {
     const $form = $("form[method='get']");
     const $container = $("#ordersContainer");
-    const $unit = $("#unitNamesSelect");
-    const $datepicker = $(".datepicker");
+
+    const $input = $("#unitNameInput");
+    const $suggest = $("#unitNameSuggest");
+    const $selected = $("#selectedUnitNames");
+
+    const $datepicker = $('.datepicker');
 
     $datepicker.datepicker({
         format: "yyyy-mm-dd", // ISO-friendly format
@@ -11,9 +15,14 @@ $(function () {
         weekStart: 1, // Monday
     });
 
+    $datepicker.on("changeDate", function () {
+        $("form[method='get']").trigger("submit");
+    });
+
+    // --- existing helpers you already use ---
     function buildUrlFromForm() {
         const baseUrl = $form.attr("action") || window.location.pathname;
-        const qs = $form.serialize(); // includes repeated unit_names
+        const qs = $form.serialize(); // includes repeated unit_names via hidden inputs
         return qs ? `${baseUrl}?${qs}` : baseUrl;
     }
 
@@ -27,70 +36,160 @@ $(function () {
                 if (push) window.history.pushState({}, "", url);
             },
             error: function () {
-                window.location.href = url; // safe fallback
+                window.location.href = url;
             }
         });
     }
 
     function submitFiltersResetPage() {
-        // reset page on any filter change
-        // (we do it by removing page param: easiest is just rely on backend default page=1)
-        // But if you ever add <input name="page">, set it to 1 here.
         loadIntoContainer(buildUrlFromForm(), true);
     }
 
-    // Intercept full form submit (Enter key etc.)
+    // --- generic auto-submit for other fields ---
+    $form.on("change", "input, select", function () {
+        if (this.id === "unitNameInput") return;
+        submitFiltersResetPage();
+    });
+
     $form.on("submit", function (e) {
         e.preventDefault();
         submitFiltersResetPage();
     });
 
-    // Sorting + pagination clicks (delegated)
     $container.on("click", "a.js-sort, a.js-page", function (e) {
         e.preventDefault();
         loadIntoContainer($(this).attr("href"), true);
     });
 
-    // Back/forward
     window.addEventListener("popstate", function () {
         loadIntoContainer(window.location.href, false);
     });
 
-    // Auto-submit when regular inputs change (order_id/start/end/per_page)
-    $form.on("change", "input, select", function (e) {
-        // ignore select2 internal triggers; handle unit via select2 events below
-        if (this.id === "unitNamesSelect") return;
+    // --- unit name token logic ---
+    function getSelectedValues() {
+        const vals = [];
+        $selected.find("span[data-value]").each(function () {
+            vals.push($(this).data("value"));
+        });
+        return vals;
+    }
+
+    function hasSelected(value) {
+        return getSelectedValues().includes(value);
+    }
+
+    function addToken(value) {
+        value = (value || "").trim();
+        if (!value) return;
+        if (hasSelected(value)) return;
+
+        const $pill = $(`
+      <span class="badge bg-primary d-inline-flex align-items-center gap-2 py-2 px-2" data-value="${$("<div>").text(value).html()}">
+        <span></span>
+        <button type="button" class="btn-close btn-close-white btn-sm js-remove-unit" aria-label="Remove"></button>
+      </span>
+    `);
+        $pill.find("span").text(value);
+
+        $selected.append($pill);
+        $selected.append(`<input type="hidden" name="unit_names" value="${$("<div>").text(value).html()}">`);
+
+        $input.val("");
+        hideSuggest();
         submitFiltersResetPage();
+    }
+
+    function removeToken(value) {
+        $selected.find(`span[data-value="${CSS.escape(value)}"]`).remove();
+        $selected.find(`input[type="hidden"][name="unit_names"][value="${CSS.escape(value)}"]`).remove();
+        submitFiltersResetPage();
+    }
+
+    $selected.on("click", ".js-remove-unit", function () {
+        const value = $(this).closest("span[data-value]").data("value");
+        removeToken(value);
     });
 
-    // Select2 init + auto-submit on select/unselect
-    if ($unit.length) {
-        $unit.select2({
-            theme: "bootstrap-5",
-            width: "100%",
-            closeOnSelect: true,
-            placeholder: "Почніть вводити назву…",
-            ajax: {
-                url: "/order/unit_names",
-                dataType: "json",
-                delay: 200,
-                data: function (params) {
-                    return {
-                        term: params.term || "",
-                        "selected[]": $unit.val() || [],
-                        start: $form.find("[name='start']").val() || "",
-                        end: $form.find("[name='end']").val() || "",
-                        order_id: $form.find("[name='order_id']").val() || ""
-                    };
-                },
-                processResults: function (data) {
-                    return data;
-                }
-            }
+    // --- suggestions ---
+    let suggestXhr = null;
+
+    function hideSuggest() {
+        $suggest.addClass("d-none").empty();
+    }
+
+    function showSuggest(items) {
+        if (!items || items.length === 0) return hideSuggest();
+
+        $suggest.empty();
+        items.forEach((name) => {
+            const $a = $(`<button type="button" class="list-group-item list-group-item-action"></button>`);
+            $a.text(name);
+            $a.attr("data-value", name);
+            $suggest.append($a);
         });
 
-        $unit.on("select2:select select2:unselect", function () {
-            submitFiltersResetPage();
+        $suggest.removeClass("d-none");
+    }
+
+    function fetchSuggest(term) {
+        if (suggestXhr) suggestXhr.abort();
+
+        const selected = getSelectedValues();
+        const data = {
+            term: term || "",
+            "selected[]": selected,
+            start: $form.find("[name='start']").val() || "",
+            end: $form.find("[name='end']").val() || "",
+            order_id: $form.find("[name='order_id']").val() || ""
+        };
+
+        suggestXhr = $.ajax({
+            url: "/order/unit_names",
+            method: "GET",
+            dataType: "json",
+            data: data,
+            success: function (resp) {
+                showSuggest(resp.items || []);
+            },
+            error: function () {
+                hideSuggest();
+            }
         });
     }
+
+    // Type -> suggest (debounced)
+    let t = null;
+    $input.on("input", function () {
+        const term = $input.val().trim();
+        clearTimeout(t);
+        if (!term) return hideSuggest();
+
+        t = setTimeout(() => fetchSuggest(term), 200);
+    });
+
+    // Enter adds current highlighted/first suggestion if present; otherwise do nothing
+    $input.on("keydown", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+
+            const $first = $suggest.find("[data-value]").first();
+            if ($first.length) {
+                addToken($first.attr("data-value"));
+            }
+        } else if (e.key === "Escape") {
+            hideSuggest();
+        }
+    });
+
+    // Click suggestion to add
+    $suggest.on("click", "[data-value]", function () {
+        addToken($(this).attr("data-value"));
+    });
+
+    // Hide dropdown when clicking outside
+    $(document).on("click", function (e) {
+        const inside = $(e.target).closest("#unitNameInput, #unitNameSuggest, #selectedUnitNames").length > 0;
+        if (!inside) hideSuggest();
+    });
+
 });

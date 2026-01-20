@@ -22,62 +22,7 @@ tr.order-item td {
     white-space: nowrap;
 }
 
-/* Make Select2 multiple look like Bootstrap .form-select / .form-control */
-.select2-container--bootstrap-5 .select2-selection--multiple {
-    min-height: calc(2.375rem + 2px); /* Bootstrap input height */
-    padding: 0.375rem 0.75rem; /* Bootstrap padding */
-    border: 1px solid #ced4da;
-    border-radius: 0.375rem;
-    display: flex;
-    align-items: center;
-}
-
-.select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem; /* spacing between chips */
-    padding: 0;
-    margin: 0;
-    width: 100%;
-}
-
-/* Keep the search input aligned nicely inside */
-.select2-container--bootstrap-5 .select2-selection--multiple .select2-search--inline .select2-search__field {
-    margin: 0;
-    padding: 0;
-    height: 1.5rem;
-    line-height: 1.5rem;
-    min-width: 8rem;
-}
-
-/* Chips as Bootstrap-like badges */
-.select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
-    background: #e9ecef; /* like Bootstrap secondary bg */
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    padding: 0.2rem 0.5rem;
-    margin: 0;
-    color: #212529;
-}
-
-/* Make the “x” look cleaner */
-.select2-container--bootstrap-5 .select2-selection__choice__remove {
-    border: 0;
-    margin-right: 0.35rem;
-    color: #6c757d;
-}
-
-.select2-container--bootstrap-5 .select2-selection__choice__remove:hover {
-    color: #212529;
-}
-
-/* Focus state like Bootstrap */
-.select2-container--bootstrap-5.select2-container--focus .select2-selection--multiple {
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25);
-}
-
-/* Optional: keep the control from looking “empty tall” when only 1 chip */
-.select2-container--bootstrap-5 .select2-selection--multiple {
-    height: auto;
+/* Make suggestion dropdown sit under the input */
+#unitNameSuggest {
+    margin-top: 2px;
 }
