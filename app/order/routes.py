@@ -79,6 +79,12 @@ def order_unit_names():
 @order.route("/list", methods=["GET"])
 @login_required
 def orders_list():
+    items = OrderItem.query.all()
+    for item in items:
+        item.unit_name_search = normalize_text(item.unit_name)
+
+    db.session.commit()
+
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
