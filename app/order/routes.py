@@ -92,12 +92,29 @@ def orders_list():
     start = request.args.get("start", "", type=str).strip()
     end = request.args.get("end", "", type=str).strip()
 
-    unit_names = request.args.getlist("unit_names")  # multi-select values (display strings)
+    unit_names = request.args.getlist("unit_names")  # selected display strings
     sort = request.args.get("sort", "created_at", type=str)
     direction = request.args.get("direction", "desc", type=str)
 
-    query = Order.query.options(selectinload(Order.items))
+    # Normalize selected unit names (for AND semantics)
+    selected_norm = sorted({normalize_text(n) for n in unit_names if normalize_text(n)})
 
+    oi = OrderItem  # alias convenience
+
+    # Aggregate totals (SQL)
+    total_price_expr = func.coalesce(func.sum(oi.quantity * oi.unit_price), 0).label("total_price")
+    total_margin_expr = func.coalesce(func.sum(oi.quantity * oi.unit_margin), 0).label("total_margin")
+    grand_total_expr = (total_price_expr + total_margin_expr).label("grand_total")
+
+    # Base query: Order + aggregates
+    query = (
+        db.session.query(Order)
+        .options(selectinload(Order.items))
+        .outerjoin(oi)
+        .group_by(Order.id)
+    )
+
+    # Order-level filters
     if order_id and order_id.isdigit():
         query = query.filter(Order.id == int(order_id))
 
@@ -109,19 +126,26 @@ def orders_list():
         end_dt = datetime.strptime(end, "%Y-%m-%d") + timedelta(days=1)
         query = query.filter(Order.created_at < end_dt)
 
-    # AND semantics: order must contain ALL selected unit_names
-    if unit_names:
-        normalized = sorted({normalize_text(n) for n in unit_names if normalize_text(n)})
-        if normalized:
-            query = (
-                query
-                .join(OrderItem)
-                .filter(OrderItem.unit_name_search.in_(normalized))
-                .group_by(Order.id)
-                .having(func.count(distinct(OrderItem.unit_name_search)) == len(normalized))
+    # AND filter: order must contain ALL selected unit_names (case-insensitive via unit_name_search)
+    if selected_norm:
+        matched_distinct_expr = func.count(
+            distinct(
+                case(
+                    (oi.unit_name_search.in_(selected_norm), oi.unit_name_search),
+                    else_=None,
+                )
             )
+        )
+        query = query.having(matched_distinct_expr == len(selected_norm))
 
-    sort_map = {"id": Order.id, "created_at": Order.created_at}
+    # Sorting whitelist (add totals)
+    sort_map = {
+        "id": Order.id,
+        "created_at": Order.created_at,
+        "total_price": total_price_expr,
+        "total_margin": total_margin_expr,
+        "grand_total": grand_total_expr,
+    }
     sort_col = sort_map.get(sort, Order.created_at)
     sort_fn = desc if direction == "desc" else asc
     query = query.order_by(sort_fn(sort_col))
@@ -135,7 +159,7 @@ def orders_list():
             "order_id": order_id,
             "start": start,
             "end": end,
-            "unit_names": unit_names,  # keep selected in form
+            "unit_names": unit_names,
             "per_page": per_page,
             "sort": sort,
             "direction": direction,
