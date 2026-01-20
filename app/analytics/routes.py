@@ -13,41 +13,50 @@ from ..utils import get_usd_uah_rate
 def stats():
     return render_template("analytics/stats.html")
 
-
-@analytics.route("/get_monthly_stats", methods=["POST"])
+@analytics.route("/get_monthly_stats_html", methods=["POST"])
 @login_required
-def get_monthly_stats():
-    data = request.get_json()
+def get_monthly_stats_html():
+    data = request.get_json() or {}
     start_date = data.get("startDate")
     end_date = data.get("endDate")
 
     if not start_date or not end_date:
-        return jsonify({"error": "month parameter required"}), 400
+        return jsonify({"error": "startDate/endDate required"}), 400
 
-    start_date = datetime.strptime(start_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0)
-    end_date = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+    days = build_monthly_stats_days(start_date, end_date)
+
+    html = render_template("analytics/_monthly_stats_tbody.html", data=days)
+    return jsonify({"html": html, "data": days})
+
+@analytics.route("/get_monthly_stats", methods=["POST"])
+@login_required
+def get_monthly_stats():
+    data = request.get_json() or {}
+    start_date = data.get("startDate")
+    end_date = data.get("endDate")
+
+    if not start_date or not end_date:
+        return jsonify({"error": "startDate/endDate required"}), 400
+
+    days = build_monthly_stats_days(start_date, end_date)
+    return jsonify(days)
+
+def build_monthly_stats_days(start_date_str: str, end_date_str: str):
+    if not start_date_str or not end_date_str:
+        raise ValueError("startDate/endDate required")
+
+    start_dt = datetime.strptime(start_date_str, "%Y-%m-%d").replace(hour=0, minute=0, second=0)
+    end_dt = datetime.strptime(end_date_str, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
 
     order_data = (
         db.session.query(
             func.date(Order.created_at).label("day"),
-
-            # Count unique orders, not line items
             func.count(func.distinct(Order.id)).label("order_count"),
-
-            # Sum of line-level sales
             func.sum(OrderItem.quantity * OrderItem.unit_price).label("total_sales"),
-
-            # Sum of line-level margin
-            func.sum(
-                OrderItem.quantity * (OrderItem.unit_price - Product.cost)
-            ).label("total_margin"),
+            func.sum(OrderItem.quantity * OrderItem.unit_margin).label("total_margin"),
         )
         .join(OrderItem, Order.id == OrderItem.order_id)
-        .join(Product, Product.id == OrderItem.product_id)
-        .filter(
-            Order.created_at >= start_date,
-            Order.created_at <= end_date,
-        )
+        .filter(Order.created_at >= start_dt, Order.created_at <= end_dt)
         .group_by(func.date(Order.created_at))
         .order_by(func.date(Order.created_at))
         .all()
@@ -64,15 +73,15 @@ def get_monthly_stats():
 
     smm_data = (
         db.session.query(SMMStats)
-        .filter(SMMStats.date >= start_date.date(), SMMStats.date <= end_date.date())
+        .filter(SMMStats.date >= start_dt.date(), SMMStats.date <= end_dt.date())
         .all()
     )
     smm_by_day = {sd.date: sd for sd in smm_data}
 
     days = []
-    day = start_date
+    day = start_dt
 
-    while day <= end_date:
+    while day <= end_dt:
         order_info = orders_by_day.get(
             day.date(), {"order_count": 0, "total_sales": 0.0, "total_margin": 0.0}
         )
@@ -83,25 +92,28 @@ def get_monthly_stats():
             smm_info.usd_rate = get_usd_uah_rate(day)
             db.session.commit()
 
+        spends_usd = float(smm_info.spends) if smm_info else 0.0
+        rate = float(smm_info.usd_rate) if (smm_info and smm_info.usd_rate) else 0.0
+        spends_uah = spends_usd * rate
+
         days.append(
             {
                 "date": day.date().isoformat(),
                 "order_count": order_info["order_count"],
                 "total_sales": order_info["total_sales"],
                 "total_margin": order_info["total_margin"],
-                "smm_spends_usd": float(smm_info.spends) if smm_info else 0.0,
-                "smm_spends_uah": float(smm_info.spends) * float(smm_info.usd_rate) if smm_info else 0.0,
+                "smm_spends_usd": spends_usd,
+                "smm_spends_uah": spends_uah,
                 "smm_coverage": smm_info.coverage if smm_info else 0,
                 "smm_clicks": smm_info.clicks if smm_info else 0,
                 "smm_direct_messages": smm_info.direct_messages if smm_info else 0,
-                "revenue": order_info["total_margin"] - (
-                    float(smm_info.spends) * float(smm_info.usd_rate) if smm_info else 0.0),
+                "revenue": order_info["total_margin"] - spends_uah,
             }
         )
 
         day += timedelta(days=1)
 
-    return jsonify(days)
+    return days
 
 
 @analytics.route("/update_smm_stat", methods=["POST"])

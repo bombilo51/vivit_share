@@ -1,15 +1,23 @@
-$(document).ready(function () {
+$(function () {
     const $startDate = $("#startDateFilter");
     const $endDate = $("#endDateFilter");
     const $tableBody = $("#statsTable tbody");
 
+    let lastData = [];
+
     $startDate.datepicker({
-        format: "yyyy-mm-dd", autoclose: true, todayHighlight: true, weekStart: 1, // Monday
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        todayHighlight: true,
+        weekStart: 1,
         minViewMode: 0,
     });
 
     $endDate.datepicker({
-        format: "yyyy-mm-dd", autoclose: true, todayHighlight: true, weekStart: 1, // Monday
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        todayHighlight: true,
+        weekStart: 1,
         minViewMode: 0,
     });
 
@@ -19,41 +27,26 @@ $(document).ready(function () {
         if (!startDate || !endDate) return;
 
         $.ajax({
-            url: `/analytics/get_monthly_stats`,
+            url: "/analytics/get_monthly_stats_html",
             method: "POST",
             data: JSON.stringify({startDate, endDate}),
             contentType: "application/json",
             beforeSend: function () {
                 $tableBody.html(`<tr><td colspan="10">Loading data for ${startDate} - ${endDate}...</td></tr>`);
             },
-            success: function (data) {
-                $tableBody.empty();
+            success: function (resp) {
+                const html = resp?.html || "";
+                const data = resp?.data || [];
 
-                if (!data || data.length === 0) {
+                if (!data.length) {
                     $tableBody.html(`<tr><td colspan="10">No data available for ${startDate} - ${endDate}</td></tr>`);
+                    lastData = [];
+                    recountSum(lastData);
                     return;
                 }
 
+                $tableBody.html(html);
                 lastData = data;
-
-                $.each(data, function (_, day) {
-                    const row = `
-            <tr>
-              <td>${day.date}</td>
-              <td>${day.order_count}</td>
-              <td>${Number(day.total_sales || 0).toFixed(2)}</td>
-              <td id="margin-${day.date}">${Number(day.total_margin || 0).toFixed(2)}</td>
-              <td><input id="spends-usd-${day.date}" class="form-control smmStats" type="number" data-type="spends" data-date="${day.date}" value="${Number(day.smm_spends_usd || 0).toFixed(2)}"></td>
-              <td><input id="spends-uah-${day.date}" class="form-control" type="number" data-date="${day.date}" value="${Number(day.smm_spends_uah || 0).toFixed(2)}" disabled></td>
-              <td><input class="form-control smmStats" type="number" step="0.1" data-type="coverage" data-date="${day.date}" value="${Number(day.smm_coverage || 0)}"></td>
-              <td><input class="form-control smmStats" type="number" step="0.1" data-type="clicks" data-date="${day.date}" value="${Number(day.smm_clicks || 0)}"></td>
-              <td><input class="form-control smmStats" type="number" step="0.1" data-type="direct_messages" data-date="${day.date}" value="${Number(day.smm_direct_messages || 0)}"></td>
-              <td><input id="revenue-${day.date}" class="form-control" type="number" step="0.1" data-date="${day.date}" value="${Number(day.revenue || 0).toFixed(2)}" readonly></td>
-            </tr>
-          `;
-                    $tableBody.append(row);
-                });
-
                 recountSum(lastData);
             },
             error: function () {
@@ -65,16 +58,17 @@ $(document).ready(function () {
     $startDate.on("change", DateFilterChange);
     $endDate.on("change", DateFilterChange);
 
-    // Bind once (delegated)
     $("#statsTable").on("change", ".smmStats", function () {
         const type = $(this).data("type");
         const date = $(this).data("date");
         const valueRaw = $(this).val();
 
-        const $revenue = $(`#revenue-${date}`);
-        const $margin = $(`#margin-${date}`);
-        const $spendsUsd = $(`#spends-usd-${date}`);
-        const $spendsUah = $(`#spends-uah-${date}`);
+        const d = String(date).replace(/-/g, "_");
+
+        const $revenue = $(`#revenue-${d}`);
+        const $margin = $(`#margin-${d}`);
+        const $spendsUsd = $(`#spends-usd-${d}`);
+        const $spendsUah = $(`#spends-uah-${d}`);
 
         $.ajax({
             url: "/analytics/update_smm_stat",
@@ -86,26 +80,41 @@ $(document).ready(function () {
                 const rate = parseFloat(response.usd_rate) || 0;
                 const spendsUAH = usd * rate;
 
-                $spendsUah.val(spendsUAH.toFixed(2));
+                $spendsUah.val(moneySpace(spendsUAH, 2));
 
                 const margin = parseFloat($margin.text()) || 0;
                 const revenue = margin - spendsUAH;
-                $revenue.val(revenue.toFixed(2));
+                $revenue.val(moneySpace(revenue, 2));
 
-                // keep model + totals in sync
+                // sync model
                 const row = lastData?.find(x => x.date === date);
                 if (row) {
                     if (type === "spends") {
                         row.smm_spends_usd = usd;
                         row.smm_spends_uah = spendsUAH;
                         row.revenue = revenue;
-                    } else if (type === "coverage") row.smm_coverage = parseFloat(valueRaw) || 0; else if (type === "clicks") row.smm_clicks = parseFloat(valueRaw) || 0; else if (type === "direct_messages") row.smm_direct_messages = parseFloat(valueRaw) || 0;
+                    } else if (type === "coverage") {
+                        row.smm_coverage = parseFloat(valueRaw) || 0;
+                    } else if (type === "clicks") {
+                        row.smm_clicks = parseFloat(valueRaw) || 0;
+                    } else if (type === "direct_messages") {
+                        row.smm_direct_messages = parseFloat(valueRaw) || 0;
+                    }
                 }
+
                 recountSum(lastData);
             }
         });
     });
 });
+
+function moneySpace(value, decimals = 2) {
+    const num = Number(value) || 0;
+    return new Intl.NumberFormat("uk-UA", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+    }).format(num);
+}
 
 function recountSum(data) {
     const $day = $("#sum-day");
@@ -141,14 +150,14 @@ function recountSum(data) {
         revenue += day.revenue;
     });
 
-    $day.text("За період")
-    $orders.text(ordersCount)
-    $sales.text(sales.toFixed(2))
-    $margin.text(margin.toFixed(2))
-    $spendsUSD.text(spendsUSD.toFixed(2))
-    $spendsUAH.text(spendsUAH.toFixed(2))
-    $coverage.text(coverage)
-    $clicks.text(clicks)
-    $dms.text(dms)
-    $revenue.text(revenue.toFixed(2))
+    $day.text("За період");
+    $orders.text(ordersCount);
+    $sales.text(moneySpace(sales, 2));
+    $margin.text(moneySpace(margin, 2));
+    $spendsUSD.text(moneySpace(spendsUSD, 2));
+    $spendsUAH.text(moneySpace(spendsUAH, 2));
+    $coverage.text(coverage);
+    $clicks.text(clicks);
+    $dms.text(dms);
+    $revenue.text(moneySpace(revenue, 2));
 }

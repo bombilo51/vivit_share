@@ -57,7 +57,9 @@ class OrderItem(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey("order.id"), primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), primary_key=True)
     quantity = db.Column(db.Integer, nullable=False, default=1)
-    unit_price = db.Column(Numeric(10, 2), nullable=False)
+    unit_name = db.Column(db.String(100), nullable=False, default="NO_NAME_PROVIDED")
+    unit_price = db.Column(Numeric(10, 2), nullable=False, default=Decimal('0'))
+    unit_margin = db.Column(Numeric(10, 2), nullable=False, default=Decimal('0'))
 
     order = db.relationship("Order", back_populates="items")
     product = db.relationship("Product")
@@ -66,11 +68,14 @@ class OrderItem(db.Model):
     def total_price(self):
         return Decimal(self.quantity) * Decimal(self.unit_price)
 
-    def __init__(self, product, quantity=1, unit_price=None):
+    def __init__(self, product, quantity=1, unit_price=None, unit_margin=None):
         self.product = product
         self.quantity = int(quantity)
         self.unit_price = (
             Decimal(unit_price) if unit_price is not None else Decimal(product.price)
+        )
+        self.unit_margin = (
+            Decimal(unit_margin) if unit_margin is not None else Decimal(product.margin)
         )
 
 class Order(db.Model):
@@ -82,12 +87,12 @@ class Order(db.Model):
         "OrderItem", back_populates="order", cascade="all, delete-orphan"
     )
 
-    def add_product(self, product, quantity=1, unit_price=None):
+    def add_product(self, product, quantity=1, unit_price=None, unit_margin=None):
         for item in self.items:
             if item.product_id == product.id:
                 item.quantity += int(quantity)
                 return item
-        item = OrderItem(product=product, quantity=quantity, unit_price=unit_price)
+        item = OrderItem(product=product, quantity=quantity, unit_price=unit_price, unit_margin=unit_margin)
         self.items.append(item)
         return item
 
@@ -102,7 +107,7 @@ class Order(db.Model):
     def total_margin(self):
         total_margin = Decimal("0")
         for item in self.items:
-            total_margin += int(item.quantity) * Decimal(item.product.margin)
+            total_margin += int(item.quantity) * Decimal(item.unit_margin)
         return total_margin
 
 
@@ -113,7 +118,7 @@ class Order(db.Model):
             "items": [
                 {
                     "product_id": item.product_id,
-                    "product_name": item.product.name,
+                    "product_name": item.unit_name,
                     "quantity": item.quantity,
                     "unit_price": float(item.unit_price),
                     "total_price": float(item.total_price),

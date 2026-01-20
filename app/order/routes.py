@@ -27,13 +27,13 @@ def add_order():
         product_ids = request.form.getlist("product[]")
         quantities = request.form.getlist("quantity[]")
         unit_prices = request.form.getlist("unitPrice[]")
-
+        unit_margins = request.form.getlist("unitMargin[]")
         created_at = datetime.fromisoformat(date_str)
 
         # Aggregate per product_id to avoid duplicates
         aggregated = defaultdict(lambda: {"quantity": 0, "unit_price": None})
 
-        for pid, qty, price in zip(product_ids, quantities, unit_prices):
+        for pid, qty, price, margin in zip(product_ids, quantities, unit_prices, unit_margins):
             if not pid or int(qty) <= 0:
                 continue
 
@@ -41,7 +41,8 @@ def add_order():
             aggregated[pid]["quantity"] += int(qty)
 
             # Keep last price or enforce consistency check
-            aggregated[pid]["unit_price"] = Decimal(price)
+            aggregated[pid]["unit_price"] = int(price)
+            aggregated[pid]["unit_margin"] = int(margin)
 
         if not aggregated:
             return 400, "Order must contain at least one product"
@@ -84,6 +85,7 @@ def edit_order(order_id):
         product_ids = request.form.getlist("product[]")
         quantities = request.form.getlist("quantity[]")
         unit_prices = request.form.getlist("unitPrice[]")
+        unit_margins = request.form.getlist("unitMargin[]")
 
         order.created_at = datetime.fromisoformat(date)
 
@@ -91,14 +93,14 @@ def edit_order(order_id):
             db.session.delete(item)
         db.session.commit()
 
-        for product_id, quantity, unit_price in zip(
-            product_ids, quantities, unit_prices
+        for product_id, quantity, unit_price, unit_margin in zip(
+            product_ids, quantities, unit_prices, unit_margins
         ):
             if product_id and int(quantity) > 0:
                 product = next((p for p in products if p.id == int(product_id)), None)
                 if product:
                     order.add_product(
-                        product=product, quantity=int(quantity), unit_price=unit_price
+                        product=product, quantity=int(quantity), unit_price=unit_price, unit_margin=unit_margin
                     )
 
         db.session.commit()

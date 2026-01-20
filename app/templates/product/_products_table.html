@@ -46,9 +46,9 @@
         <tr id="productRow{{ product.id }}">
             <td>{{ product.id }}</td>
             <td style="text-overflow: ellipsis;  overflow: hidden; max-width: 1px;" >{{ product.name }}</td>
-            <td>{{ product.cost }}</td>
-            <td>{{ product.margin }}</td>
-            <td>{{ product.price }}</td>
+            <td>{{ product.cost | money_space(2) }}</td>
+            <td>{{ product.margin | money_space(2) }}</td>
+            <td>{{ product.price | money_space(2) }}</td>
             <td>
                 <a href="{{ url_for('product.edit_product', product_id=product.id) }}"
                    class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>

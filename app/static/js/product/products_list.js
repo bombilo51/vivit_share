@@ -10,6 +10,7 @@ function deleteProduct(id) {
                     row.remove();
                     console.log("Product deleted successfully.");
                 } else {
+                    alert(data.message);
                     console.log("Error deleting product: " + data.message);
                 }
             })

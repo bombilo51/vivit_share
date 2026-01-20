@@ -1,6 +1,8 @@
 from flask import Flask, render_template
 from .config import config
 from .extensions import db, migrate, login_manager, cors
+from .utils import money_space
+
 
 def create_app(config_name='default'):
     app = Flask(__name__, template_folder='templates', static_folder='static')
@@ -24,6 +26,11 @@ def create_app(config_name='default'):
 
     from .analytics import analytics as analytics_blueprint
     app.register_blueprint(analytics_blueprint, url_prefix='/analytics')
+
+
+    #JINJA FORMATTERS
+
+    app.jinja_env.filters["money_space"] = money_space
 
     # Simple index route
     @app.route('/')

@@ -55,7 +55,7 @@
                     <td><input type="number" name="unitPrice[]" class="form-control unit-price-input" step="0.01"
                                value="{{ item.unit_price }}" min="0"></td>
                     <td><input type="number" name="margin[]" class="form-control unit-margin-input" step="0.01"
-                               value="{{ item.product.margin }}"
+                               value="{{ item.unit_margin }}"
                                min="0" disabled></td>
                     <td><input type="number" name="totalPrice[]" class="form-control total-price-input" step="0.01"
                                value="{{ item.quantity * item.unit_price }}"></td>
