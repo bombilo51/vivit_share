@@ -1,18 +1,147 @@
-from flask import jsonify, render_template, redirect, url_for, request
+from collections import defaultdict
+from datetime import datetime, timedelta
+
+from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import login_required
+from sqlalchemy import desc, asc, func, distinct
+from sqlalchemy.orm import selectinload
+
 from . import order
+from .. import normalize_text
 from ..extensions import db
 from ..models import Order, OrderItem, Product
-from datetime import datetime
-from collections import defaultdict
-from decimal import Decimal
+
+
+@order.route("/unit_names", methods=["GET"])
+@login_required
+def order_unit_names():
+    term = request.args.get("term", "", type=str).strip()
+    term_norm = normalize_text(term)
+
+    start = request.args.get("start", "", type=str).strip()  # YYYY-MM-DD
+    end = request.args.get("end", "", type=str).strip()  # YYYY-MM-DD
+    order_id = request.args.get("order_id", "", type=str).strip()
+
+    # Current selected items (multi)
+    selected = request.args.getlist("selected[]") or request.args.getlist("selected")
+    selected_norm = sorted({normalize_text(x) for x in selected if normalize_text(x)})
+
+    # Base: unit_name values that appear in order_item
+    base = (
+        db.session.query(OrderItem.unit_name, OrderItem.unit_name_search)
+        .join(Order, Order.id == OrderItem.order_id)
+        .filter(OrderItem.unit_name_search.isnot(None))
+    )
+
+    if selected_norm:
+        base = base.filter(~OrderItem.unit_name_search.in_(selected_norm))
+
+    # Apply optional order-level filters to options too (so options match current list filters)
+    if order_id and order_id.isdigit():
+        base = base.filter(Order.id == int(order_id))
+
+    if start:
+        start_dt = datetime.strptime(start, "%Y-%m-%d")
+        base = base.filter(Order.created_at >= start_dt)
+
+    if end:
+        end_dt = datetime.strptime(end, "%Y-%m-%d") + timedelta(days=1)
+        base = base.filter(Order.created_at < end_dt)
+
+    # If user already selected some items, only offer options that can co-exist with them
+    # i.e., options that appear in orders that contain ALL selected items.
+    if selected_norm:
+        orders_with_all_selected = (
+            db.session.query(OrderItem.order_id)
+            .filter(OrderItem.unit_name_search.in_(selected_norm))
+            .group_by(OrderItem.order_id)
+            .having(func.count(distinct(OrderItem.unit_name_search)) == len(selected_norm))
+            .subquery()
+        )
+        base = base.filter(OrderItem.order_id.in_(orders_with_all_selected))
+
+    # Text search on options (case-insensitive via normalized column)
+    if term_norm:
+        base = base.filter(OrderItem.unit_name_search.contains(term_norm))
+
+    # Distinct options
+    rows = (
+        base.group_by(OrderItem.unit_name, OrderItem.unit_name_search)
+        .order_by(OrderItem.unit_name)
+        .limit(50)
+        .all()
+    )
+
+    results = [{"id": name, "text": name} for name, _ in rows if name]
+    return jsonify({"results": results})
 
 
 @order.route("/list", methods=["GET"])
 @login_required
 def orders_list():
-    orders = Order.query.all()
-    return render_template("order/list.html", orders=orders)
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    order_id = request.args.get("order_id", "", type=str).strip()
+    start = request.args.get("start", "", type=str).strip()
+    end = request.args.get("end", "", type=str).strip()
+
+    unit_names = request.args.getlist("unit_names")  # multi-select values (display strings)
+    sort = request.args.get("sort", "created_at", type=str)
+    direction = request.args.get("direction", "desc", type=str)
+
+    query = Order.query.options(selectinload(Order.items))
+
+    if order_id and order_id.isdigit():
+        query = query.filter(Order.id == int(order_id))
+
+    if start:
+        start_dt = datetime.strptime(start, "%Y-%m-%d")
+        query = query.filter(Order.created_at >= start_dt)
+
+    if end:
+        end_dt = datetime.strptime(end, "%Y-%m-%d") + timedelta(days=1)
+        query = query.filter(Order.created_at < end_dt)
+
+    # AND semantics: order must contain ALL selected unit_names
+    if unit_names:
+        normalized = sorted({normalize_text(n) for n in unit_names if normalize_text(n)})
+        if normalized:
+            query = (
+                query
+                .join(OrderItem)
+                .filter(OrderItem.unit_name_search.in_(normalized))
+                .group_by(Order.id)
+                .having(func.count(distinct(OrderItem.unit_name_search)) == len(normalized))
+            )
+
+    sort_map = {"id": Order.id, "created_at": Order.created_at}
+    sort_col = sort_map.get(sort, Order.created_at)
+    sort_fn = desc if direction == "desc" else asc
+    query = query.order_by(sort_fn(sort_col))
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    context = dict(
+        orders=pagination.items,
+        pagination=pagination,
+        filters={
+            "order_id": order_id,
+            "start": start,
+            "end": end,
+            "unit_names": unit_names,  # keep selected in form
+            "per_page": per_page,
+            "sort": sort,
+            "direction": direction,
+        },
+    )
+
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    if is_ajax:
+        return render_template("order/_orders_table.html", **context)
+
+    return render_template("order/list.html", **context)
+
 
 @order.route("/add", methods=["GET", "POST"])
 @login_required
@@ -94,7 +223,7 @@ def edit_order(order_id):
         db.session.commit()
 
         for product_id, quantity, unit_price, unit_margin in zip(
-            product_ids, quantities, unit_prices, unit_margins
+                product_ids, quantities, unit_prices, unit_margins
         ):
             if product_id and int(quantity) > 0:
                 product = next((p for p in products if p.id == int(product_id)), None)

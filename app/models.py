@@ -61,6 +61,8 @@ class OrderItem(db.Model):
     unit_price = db.Column(Numeric(10, 2), nullable=False, default=Decimal('0'))
     unit_margin = db.Column(Numeric(10, 2), nullable=False, default=Decimal('0'))
 
+    unit_name_search = db.Column(db.String(255), index=True, nullable=True)
+
     order = db.relationship("Order", back_populates="items")
     product = db.relationship("Product")
 

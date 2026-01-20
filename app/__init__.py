@@ -1,7 +1,9 @@
 from flask import Flask, render_template
+
 from .config import config
 from .extensions import db, migrate, login_manager, cors
-from .utils import money_space
+from .models import OrderItem
+from .utils import money_space, normalize_text
 
 
 def create_app(config_name='default'):
@@ -27,8 +29,7 @@ def create_app(config_name='default'):
     from .analytics import analytics as analytics_blueprint
     app.register_blueprint(analytics_blueprint, url_prefix='/analytics')
 
-
-    #JINJA FORMATTERS
+    # JINJA FORMATTERS
 
     app.jinja_env.filters["money_space"] = money_space
 
@@ -36,6 +37,5 @@ def create_app(config_name='default'):
     @app.route('/')
     def index():
         return render_template('index.html')
-    
+
     return app
-    

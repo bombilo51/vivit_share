@@ -2,7 +2,8 @@ import requests
 import re
 from datetime import date
 from sqlalchemy import event
-from .models import Product
+from .models import Product, OrderItem
+
 
 def money_space(value, decimals=2):
     try:
@@ -16,6 +17,14 @@ def normalize_text(s: str) -> str:
     s = s.strip()
     s = re.sub(r"\s+", " ", s)      # collapse multiple spaces
     return s.casefold()             # Unicode-aware lowercasing
+
+@event.listens_for(OrderItem, "before_insert")
+def order_item_before_insert(mapper, connection, target):
+    target.unit_name_search = normalize_text(target.unit_name)
+
+@event.listens_for(OrderItem, "before_update")
+def order_item_before_update(mapper, connection, target):
+    target.unit_name_search = normalize_text(target.unit_name)
 
 @event.listens_for(Product, "before_insert")
 def product_before_insert(mapper, connection, target):
