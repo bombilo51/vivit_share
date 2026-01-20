@@ -99,7 +99,7 @@ def delete_product(product_id):
 @product.route("/edit_product/<int:product_id>", methods=["GET", "POST"])
 @login_required
 def edit_product(product_id):
-    product: Product = Product.query.get_or_404(product_id)
+    product = Product.query.get_or_404(product_id)
     marginUAH = product.margin if product.margin is not None else 0
     marginPercent = round(
         product.cost and (product.margin / product.cost) * 100 or 0, 2
@@ -107,11 +107,17 @@ def edit_product(product_id):
     marginMultiplier = round(
         product.cost and ((product.cost + product.margin) / product.cost) or 0, 2
     )
+
+    orders = get_orders_with_product(product.id)
+
     if request.method == "POST":
-        product.name = request.form.get("name")
+        new_name = request.form.get("name")
+        product.name = new_name
         product.cost = request.form.get("cost")
         product.margin = request.form.get("marginUAH")
         db.session.commit()
+
+        change_order_items_name(product_id, new_name)
         return redirect(url_for("product.products_list"))
 
     return render_template(
@@ -120,4 +126,19 @@ def edit_product(product_id):
         marginUAH=marginUAH,
         marginPercent=marginPercent,
         marginMultiplier=marginMultiplier,
+        orders = orders
     )
+
+def get_orders_with_product(product_id) -> list[OrderItem]:
+    orders = (Order.query
+     .join(OrderItem, OrderItem.order_id == Order.id)
+     .filter(OrderItem.product_id == product_id)
+     .all()
+     )
+    return orders
+
+def change_order_items_name (product_id, new_name : str):
+    items = OrderItem.query.filter_by(product_id = product_id).all()
+    for item in items:
+        item.unit_name = new_name
+    db.session.commit()
