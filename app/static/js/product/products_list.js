@@ -72,12 +72,21 @@ $(function () {
     const $searchField = $("#name-q");
     const $perPage = $('#per_page');
 
-    $perPage.on("input", function (e) {
-        e.preventDefault()
-        $form.trigger('submit');
+    $searchField.each(function () {
+        let timer;
+
+        $(this).on("input", function (e) {
+            clearTimeout(timer)
+
+            timer = setTimeout(() => {
+                $form.trigger('submit');
+                console.log("CALLED")
+            }, 300);
+        })
     });
 
-    $searchField.on("input", function (e) {
+
+    $perPage.on("input", function (e) {
         e.preventDefault()
         $form.trigger('submit');
     });

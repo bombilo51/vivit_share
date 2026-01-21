@@ -3,7 +3,8 @@ from flask import Flask, render_template
 from .config import config
 from .extensions import db, migrate, login_manager, cors
 from .models import OrderItem
-from .utils import money_space, normalize_text
+from .utils.db import normalize_text
+from .utils.format import money_space
 
 
 def create_app(config_name='default'):

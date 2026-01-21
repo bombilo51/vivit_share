@@ -5,7 +5,7 @@ from sqlalchemy import asc, desc, func
 from . import product
 from ..extensions import db
 from ..models import Product, Order, OrderItem
-from ..utils import normalize_text
+from ..utils.db import normalize_text
 
 @product.route("/products_list")
 @login_required

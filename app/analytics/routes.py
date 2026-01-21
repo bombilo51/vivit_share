@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from ..extensions import db
 from ..models import Order, Product, SMMStats, OrderItem
 from . import analytics
-from ..utils import get_usd_uah_rate
+from ..utils.db import get_usd_uah_rate
 
 
 @analytics.route("/stats", methods=["GET"])

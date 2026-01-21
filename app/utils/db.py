@@ -1,15 +1,8 @@
-import requests
 import re
+import requests
 from datetime import date
 from sqlalchemy import event
-from .models import Product, OrderItem
-
-
-def money_space(value, decimals=2):
-    try:
-        return f"{float(value):,.{decimals}f}".replace(",", " ")
-    except (TypeError, ValueError):
-        return "0.00"
+from ..models import Product, OrderItem
 
 def normalize_text(s: str) -> str:
     if not s:
