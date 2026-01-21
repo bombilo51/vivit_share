@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 from email.policy import default
 
@@ -8,6 +9,13 @@ from .extensions import db
 from datetime import datetime, date
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+
+def normalize_text(s: str) -> str:
+    if not s:
+        return ""
+    s = s.strip()
+    s = re.sub(r"\s+", " ", s)      # collapse multiple spaces
+    return s.casefold()             # Unicode-aware lowercasing
 
 
 class User(db.Model, UserMixin):
@@ -70,7 +78,7 @@ class OrderItem(db.Model):
     def total_price(self):
         return Decimal(self.quantity) * Decimal(self.unit_price)
 
-    def __init__(self, product, quantity=1, unit_price=None, unit_margin=None):
+    def __init__(self, product, quantity=1, unit_price=None, unit_margin=None, unit_name=None):
         self.product = product
         self.quantity = int(quantity)
         self.unit_price = (
@@ -79,6 +87,8 @@ class OrderItem(db.Model):
         self.unit_margin = (
             Decimal(unit_margin) if unit_margin is not None else Decimal(product.margin)
         )
+        self.unit_name=unit_name
+        self.unit_name_search = normalize_text(unit_name)
 
 class Order(db.Model):
     __tablename__ = "order"
@@ -89,12 +99,12 @@ class Order(db.Model):
         "OrderItem", back_populates="order", cascade="all, delete-orphan"
     )
 
-    def add_product(self, product, quantity=1, unit_price=None, unit_margin=None):
+    def add_product(self, product, quantity=1, unit_price=None, unit_margin=None, unit_name=None):
         for item in self.items:
             if item.product_id == product.id:
                 item.quantity += int(quantity)
                 return item
-        item = OrderItem(product=product, quantity=quantity, unit_price=unit_price, unit_margin=unit_margin)
+        item = OrderItem(product=product, quantity=quantity, unit_price=unit_price, unit_margin=unit_margin, unit_name=unit_name)
         self.items.append(item)
         return item
 

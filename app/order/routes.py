@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 
 from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import login_required
@@ -176,35 +177,56 @@ def add_order():
     if request.method == "POST":
         date_str = request.form.get("date")
         if not date_str:
-            return 400, "Date is required"
+            return "Date is required", 400
+
+        try:
+            created_at = datetime.fromisoformat(date_str)
+        except ValueError:
+            return "Invalid date format", 400
 
         product_ids = request.form.getlist("product[]")
         quantities = request.form.getlist("quantity[]")
         unit_prices = request.form.getlist("unitPrice[]")
         unit_margins = request.form.getlist("unitMargin[]")
-        created_at = datetime.fromisoformat(date_str)
 
-        # Aggregate per product_id to avoid duplicates
-        aggregated = defaultdict(lambda: {"quantity": 0, "unit_price": None})
+        # Basic shape check so we don't silently lose rows via zip truncation
+        n = len(product_ids)
+        if not (len(quantities) == len(unit_prices) == len(unit_margins) == n):
+            return "Invalid order payload (row lengths mismatch)", 400
+
+        aggregated = defaultdict(lambda: {"quantity": 0, "unit_price": None, "unit_margin": None})
 
         for pid, qty, price, margin in zip(product_ids, quantities, unit_prices, unit_margins):
-            if not pid or int(qty) <= 0:
+            if not pid:
                 continue
 
-            pid = int(pid)
-            aggregated[pid]["quantity"] += int(qty)
+            try:
+                pid_int = int(pid)
+                qty_int = int(qty)
+            except (TypeError, ValueError):
+                return "Invalid product or quantity", 400
 
-            # Keep last price or enforce consistency check
-            aggregated[pid]["unit_price"] = int(price)
-            aggregated[pid]["unit_margin"] = int(margin)
+            if qty_int <= 0:
+                continue
+
+            # Parse money values safely (allow empty -> None or treat as 0; choose your rule)
+            try:
+                price_dec = Decimal(price) if price not in (None, "",) else None
+                margin_dec = Decimal(margin) if margin not in (None, "",) else None
+            except (InvalidOperation, TypeError):
+                return "Invalid unit price or margin", 400
+
+            aggregated[pid_int]["quantity"] += qty_int
+            # keep last entered values (or enforce consistency if you prefer)
+            aggregated[pid_int]["unit_price"] = price_dec
+            aggregated[pid_int]["unit_margin"] = margin_dec
 
         if not aggregated:
-            return 400, "Order must contain at least one product"
+            return "Order must contain at least one product", 400
 
-        # Fetch only needed products
         product_map = {
             p.id: p
-            for p in Product.query.filter(Product.id.in_(aggregated.keys()))
+            for p in Product.query.filter(Product.id.in_(aggregated.keys())).all()
         }
 
         new_order = Order(created_at=created_at)
@@ -214,19 +236,23 @@ def add_order():
             if not product:
                 continue
 
+            # Decide defaults if user left blank
+            unit_price = data["unit_price"] if data["unit_price"] is not None else Decimal("0")
+            unit_margin = data["unit_margin"] if data["unit_margin"] is not None else Decimal("0")
+
             new_order.add_product(
                 product=product,
                 quantity=data["quantity"],
-                unit_price=data["unit_price"],
+                unit_price=unit_price,
+                unit_margin=unit_margin,  # make sure add_product accepts this
+                unit_name=product.name
             )
 
         db.session.add(new_order)
         db.session.commit()
-
         return redirect(url_for("order.orders_list"))
 
     return render_template("order/add.html", products=products)
-
 
 @order.route("/edit/<int:order_id>", methods=["GET", "POST"])
 @login_required
