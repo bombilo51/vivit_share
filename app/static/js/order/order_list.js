@@ -92,8 +92,9 @@ $(function () {
         $pill.find("span").text(value);
 
         $selected.append($pill);
-        $selected.append(`<input type="hidden" name="unit_names" value="${$("<div>").text(value).html()}">`);
-
+        $("#unitNamesHiddenInputs").append(
+            `<input type="hidden" name="unit_names" value="${$("<div>").text(value).html()}">`
+        );
         $input.val("");
         hideSuggest();
         submitFiltersResetPage();
@@ -101,7 +102,9 @@ $(function () {
 
     function removeToken(value) {
         $selected.find(`span[data-value="${CSS.escape(value)}"]`).remove();
-        $selected.find(`input[type="hidden"][name="unit_names"][value="${CSS.escape(value)}"]`).remove();
+        $("#unitNamesHiddenInputs")
+            .find(`input[type="hidden"][name="unit_names"][value="${CSS.escape(value)}"]`)
+            .remove();
         submitFiltersResetPage();
     }
 

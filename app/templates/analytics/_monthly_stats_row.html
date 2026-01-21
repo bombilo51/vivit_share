@@ -1,64 +1,62 @@
 {% set d = day.date|replace('-', '_') %}
 
 <tr data-date="{{ day.date }}">
-  <td class="col-date">{{ day.date }}</td>
-  <td>{{ day.order_count }}</td>
-  <td>{{ (day.total_sales or 0) | money_space(2) }}</td>
+    <td class="col-date">{{ day.date }}</td>
+    <td>{{ day.order_count }}</td>
+    <td>{{ (day.total_sales or 0) | money_space(2) }}</td>
 
-  <td id="margin-{{ d }}">{{ (day.total_margin or 0) | money_space(2) }}</td>
+    <td id="margin-{{ d }}" data-value="{{ (day.total_margin or 0) }}">{{ (day.total_margin or 0) | money_space(2) }}</td>
 
-  <td>
-    <input id="spends-usd-{{ d }}"
-           class="form-control smmStats"
-           type="number"
-           data-type="spends"
-           data-date="{{ day.date }}"
-           value="{{ (day.smm_spends_usd or 0) | money_space(2) }}">
-  </td>
+    <td>
+        <input id="spends-usd-{{ d }}"
+               class="form-control smmStats"
+               type="number"
+               data-type="spends"
+               data-date="{{ day.date }}"
+               value="{{ (day.smm_spends_usd or 0) | money_space(2) }}">
+    </td>
 
-  <td>
-    <input id="spends-uah-{{ d }}"
-           class="form-control"
-           type="number"
-           data-date="{{ day.date }}"
-           value="{{ (day.smm_spends_uah or 0) | money_space(2) }}"
-           disabled>
-  </td>
+    <td id="spends-uah-{{ d }}"
+        data-date="{{ day.date }}">
+        {{ (day.smm_spends_uah or 0) | money_space(2) }}
+    </td>
 
-  <td>
-    <input class="form-control smmStats"
-           type="number"
-           step="0.1"
-           data-type="coverage"
-           data-date="{{ day.date }}"
-           value="{{ day.smm_coverage or 0 }}">
-  </td>
+    <td>
+        <input class="form-control smmStats"
+               type="number"
+               step="0.1"
+               data-type="coverage"
+               data-date="{{ day.date }}"
+               value="{{ day.smm_coverage or 0 }}">
+    </td>
 
-  <td>
-    <input class="form-control smmStats"
-           type="number"
-           step="0.1"
-           data-type="clicks"
-           data-date="{{ day.date }}"
-           value="{{ day.smm_clicks or 0 }}">
-  </td>
+    <td>
+        <input class="form-control smmStats"
+               type="number"
+               step="0.1"
+               data-type="clicks"
+               data-date="{{ day.date }}"
+               value="{{ day.smm_clicks or 0 }}">
+    </td>
 
-  <td>
-    <input class="form-control smmStats"
-           type="number"
-           step="0.1"
-           data-type="direct_messages"
-           data-date="{{ day.date }}"
-           value="{{ day.smm_direct_messages or 0 }}">
-  </td>
+    <td>
+        <input class="form-control smmStats"
+               type="number"
+               step="0.1"
+               data-type="direct_messages"
+               data-date="{{ day.date }}"
+               value="{{ day.smm_direct_messages or 0 }}">
+    </td>
 
-  <td>
-    <input id="revenue-{{ d }}"
-           class="form-control"
-           type="number"
-           step="0.1"
-           data-date="{{ day.date }}"
-           value="{{ (day.revenue or 0) | money_space(2) }}"
-           readonly>
-  </td>
+    <td id="revenue-{{ d }}"
+        data-date="{{ day.date }}">
+        {#    <input id="revenue-{{ d }}"#}
+        {#           class="form-control"#}
+        {#           type="number"#}
+        {#           step="0.1"#}
+        {#           data-date="{{ day.date }}"#}
+        {#           value="{{ (day.revenue or 0) | money_space(2) }}"#}
+        {#           readonly>#}
+        {{ (day.revenue or 0) | money_space(2) }}
+    </td>
 </tr>

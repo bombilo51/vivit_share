@@ -2,7 +2,7 @@
 {% if args.pop('page', None) %}{% endif %}
 {% if args.pop('sort', None) %}{% endif %}
 {% if args.pop('direction', None) %}{% endif %}
-
+<div class="text-muted">Total orders: {{ pagination.total }}</div>
 <table class="table table-hover">
     <colgroup>
         <col style="width: 6%">

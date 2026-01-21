@@ -42,6 +42,11 @@
                              class="list-group position-absolute w-100 d-none"
                              style="z-index: 2000; top: 100%; left: 0; margin-top: 2px;"></div>
                     </div>
+                    <div id="unitNamesHiddenInputs">
+                        {% for name in (filters.unit_names or []) %}
+                            <input type="hidden" name="unit_names" value="{{ name }}">
+                        {% endfor %}
+                    </div>
                 </div>
 
                 <div class="col-md-2">
@@ -76,14 +81,13 @@
                 {% for name in (filters.unit_names or []) %}
                     <span class="badge bg-primary d-inline-flex align-items-center gap-2 py-2 px-2"
                           data-value="{{ name }}">
-                <span>{{ name }}</span>
-                <button type="button" class="btn-close btn-close-white btn-sm js-remove-unit"
-                        aria-label="Remove"></button>
-              </span>
-                    <input type="hidden" name="unit_names" value="{{ name }}">
+                        <span>{{ name }}</span>
+                        <button type="button" class="btn-close btn-close-white btn-sm js-remove-unit"
+                                aria-label="Remove"></button>
+                    </span>
                 {% endfor %}
             </div>
-            <div class="text-muted">Total orders: {{ pagination.total }}</div>
+
 
             <div id="ordersContainer">
                 {% include "order/_orders_table.html" %}

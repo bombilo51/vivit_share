@@ -80,11 +80,11 @@ $(function () {
                 const rate = parseFloat(response.usd_rate) || 0;
                 const spendsUAH = usd * rate;
 
-                $spendsUah.val(moneySpace(spendsUAH, 2));
+                $spendsUah.text(moneySpace(spendsUAH, 2));
 
-                const margin = parseFloat($margin.text()) || 0;
+                const margin = $margin.data("value") || 0;
                 const revenue = margin - spendsUAH;
-                $revenue.val(moneySpace(revenue, 2));
+                $revenue.text(moneySpace(revenue, 2));
 
                 // sync model
                 const row = lastData?.find(x => x.date === date);
