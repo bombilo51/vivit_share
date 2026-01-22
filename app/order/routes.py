@@ -1,11 +1,11 @@
-from collections import defaultdict
 from datetime import datetime, timedelta
-from decimal import Decimal, InvalidOperation
 
 from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import login_required
 from sqlalchemy import desc, asc, func, distinct, case
 from sqlalchemy.orm import selectinload
+from collections import defaultdict
+from decimal import Decimal, InvalidOperation
 
 from . import order
 from .. import normalize_text
@@ -61,9 +61,9 @@ def order_unit_names():
 
     rows = (
         base.group_by(OrderItem.unit_name, OrderItem.unit_name_search)
-            .order_by(OrderItem.unit_name)
-            .limit(20)
-            .all()
+        .order_by(OrderItem.unit_name)
+        .limit(20)
+        .all()
     )
 
     items = [name for name, _ in rows if name]
@@ -71,6 +71,7 @@ def order_unit_names():
         "results": [{"id": name, "text": name} for name in items],
         "items": items
     })
+
 
 @order.route("/list", methods=["GET"])
 @login_required
@@ -254,36 +255,107 @@ def add_order():
 
     return render_template("order/add.html", products=products)
 
+
+
+
+def _safe_get(lst, i, default=""):
+    return lst[i] if i < len(lst) else default
+
 @order.route("/edit/<int:order_id>", methods=["GET", "POST"])
 @login_required
 def edit_order(order_id):
     order: Order = Order.query.get_or_404(order_id)
     products = Product.query.order_by(Product.name).all()
+    product_by_id = {p.id: p for p in products}
 
     if request.method == "POST":
-        date = request.form.get("date")
+        date_str = request.form.get("date")
+        if not date_str:
+            return 400, "Date is required"
+
+        try:
+            new_created_at = datetime.fromisoformat(date_str)
+        except ValueError:
+            return 400, "Invalid date format"
+
         product_ids = request.form.getlist("product[]")
         quantities = request.form.getlist("quantity[]")
         unit_prices = request.form.getlist("unitPrice[]")
         unit_margins = request.form.getlist("unitMargin[]")
 
-        order.created_at = datetime.fromisoformat(date)
+        aggregated = defaultdict(lambda: {"quantity": 0, "unit_price": None, "unit_margin": None})
 
-        for item in order.items:
-            db.session.delete(item)
-        db.session.commit()
+        for i in range(len(product_ids)):
+            pid = _safe_get(product_ids, i)
+            qty = _safe_get(quantities, i)
+            price = _safe_get(unit_prices, i)
+            margin = _safe_get(unit_margins, i)
 
-        for product_id, quantity, unit_price, unit_margin in zip(
-                product_ids, quantities, unit_prices, unit_margins
-        ):
-            if product_id and int(quantity) > 0:
-                product = next((p for p in products if p.id == int(product_id)), None)
-                if product:
-                    order.add_product(
-                        product=product, quantity=int(quantity), unit_price=unit_price, unit_margin=unit_margin
-                    )
+            if not pid:
+                continue
 
-        db.session.commit()
+            try:
+                pid_int = int(pid)
+                qty_int = int(qty) if qty not in ("", None) else 0
+            except ValueError:
+                continue
+
+            if qty_int <= 0:
+                continue
+
+            try:
+                price_val = Decimal(price) if price not in ("", None) else Decimal("0")
+            except ValueError:
+                price_val = Decimal("0")
+
+            try:
+                margin_val = Decimal(margin) if margin not in ("", None) else Decimal("0")
+            except (InvalidOperation, ValueError):
+                margin_val = Decimal("0")
+
+            aggregated[pid_int]["quantity"] += qty_int
+            aggregated[pid_int]["unit_price"] = price_val
+            aggregated[pid_int]["unit_margin"] = margin_val
+
+        submitted_pids = set(aggregated.keys())
+        existing_by_pid = {item.product_id: item for item in order.items}
+
+        try:
+            with db.session.begin_nested():
+                order.created_at = new_created_at
+
+                # 2) UPSERT
+                for pid_int, data in aggregated.items():
+                    product = product_by_id.get(pid_int)
+                    if not product:
+                        continue
+
+                    item = existing_by_pid.get(pid_int)
+                    if item:
+                        item.quantity = data["quantity"]
+                        item.unit_price = data["unit_price"]
+                        item.unit_margin = data["unit_margin"]
+                    else:
+                        order.add_product(
+                            product=product,
+                            quantity=data["quantity"],
+                            unit_price=data["unit_price"],
+                            unit_margin=data["unit_margin"],
+                            unit_name=product.name
+                        )
+
+                # 3) PRUNE removed items
+                for pid_int, item in existing_by_pid.items():
+                    if pid_int not in submitted_pids:
+                        db.session.delete(item)
+
+            # IMPORTANT: finalize outer transaction
+            db.session.commit()
+
+        except Exception:
+            db.session.rollback()
+            raise
+
         return redirect(url_for("order.orders_list"))
 
     return render_template("order/edit.html", products=products, order=order)

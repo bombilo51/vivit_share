@@ -45,7 +45,7 @@
 
     <tbody>
     {% for order in orders %}
-        <tr class="order-head" id="orderRow-{{ order.id }}">
+        <tr class="order-head" id="orderRow-{{ order.id }}" data-id="{{ order.id }}">
             <td>{{ order.id }}</td>
             <td>{{ order.created_at.strftime('%d-%m-%Y') }}</td>
             <td></td>
@@ -64,7 +64,7 @@
         </tr>
 
         {% for item in order.items %}
-            <tr class="order-item">
+            <tr class="order-item for-order-{{ order.id }}">
                 <td></td>
                 <td></td>
                 <td>{{ item.unit_name }}</td>
@@ -113,6 +113,4 @@
 
         </ul>
     </nav>
-
-    <div class="text-muted">Total orders: {{ pagination.total }}</div>
 {% endif %}

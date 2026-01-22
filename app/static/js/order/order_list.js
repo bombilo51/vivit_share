@@ -19,6 +19,13 @@ $(function () {
         $("form[method='get']").trigger("submit");
     });
 
+    $('.order-head').on('click', function () {
+        const order_id = $(this).data('id');
+        console.log(`ORDER CLICKED ${order_id}`);
+        const $products = $(`.for-order-${order_id}`);
+        $products.toggle();
+    })
+
     // --- existing helpers you already use ---
     function buildUrlFromForm() {
         const baseUrl = $form.attr("action") || window.location.pathname;
@@ -196,3 +203,31 @@ $(function () {
     });
 
 });
+
+
+function deleteOrder(order_id) {
+    if (confirm("Are you sure you want to delete this product?")) {
+        fetch(`delete_order/${order_id}`, {
+            method: "DELETE",
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    const row = document.getElementById(`orderRow-${order_id}`);
+                    const products = document.querySelectorAll(`.for-order-${order_id}`)
+                    products.forEach(product => {
+                        product.remove();
+                    })
+                    row.remove();
+                    console.log("Order deleted successfully.");
+                } else {
+                    alert(data.message);
+                    console.log("Error deleting order: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred while deleting the order.");
+            });
+    }
+}

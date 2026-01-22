@@ -54,9 +54,9 @@
                                value="{{ item.quantity }}" min="1"></td>
                     <td><input type="number" name="unitPrice[]" class="form-control unit-price-input" step="0.01"
                                value="{{ item.unit_price }}" min="0"></td>
-                    <td><input type="number" name="margin[]" class="form-control unit-margin-input" step="0.01"
+                    <td><input type="number" name="unitMargin[]" class="form-control unit-margin-input" step="0.01"
                                value="{{ item.unit_margin }}"
-                               min="0" disabled></td>
+                               min="0" readonly></td>
                     <td><input type="number" name="totalPrice[]" class="form-control total-price-input" step="0.01"
                                value="{{ item.quantity * item.unit_price }}"></td>
                     <td><input type="number" name="total_margin[]" class="form-control total-margin-input" step="0.01"
@@ -80,8 +80,8 @@
                 <td><input type="number" name="quantity[]" class="form-control quantity-input" value="" min="1"></td>
                 <td><input type="number" name="unitPrice[]" class="form-control unit-price-input" step="0.01"
                            value="0.00" min="0"></td>
-                <td><input type="number" name="margin[]" class="form-control margin-input" step="0.01" value="0.00"
-                           min="0" disabled></td>
+                <td><input type="number" name="unitMargin[]" class="form-control unit-margin-input" step="0.01" value="0.00"
+                           min="0" ></td>
                 <td><input type="number" name="totalPrice[]" class="form-control total-price-input" step="0.01"
                            value="0.00"></td>
                 <td><input type="number" name="total_margin[]" class="form-control total-margin-input" step="0.01"
