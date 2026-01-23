@@ -1,7 +1,10 @@
-from flask import jsonify, render_template, request
+from flask import jsonify, render_template, request, send_file
 from flask_login import login_required
+from openpyxl.styles.builtins import output
 from sqlalchemy import func
 from datetime import datetime, timedelta
+
+from .utils import build_excel_data, build_monthly_stats_days
 from ..extensions import db
 from ..models import Order, Product, SMMStats, OrderItem
 from . import analytics
@@ -40,80 +43,6 @@ def get_monthly_stats():
 
     days = build_monthly_stats_days(start_date, end_date)
     return jsonify(days)
-
-def build_monthly_stats_days(start_date_str: str, end_date_str: str):
-    if not start_date_str or not end_date_str:
-        raise ValueError("startDate/endDate required")
-
-    start_dt = datetime.strptime(start_date_str, "%Y-%m-%d").replace(hour=0, minute=0, second=0)
-    end_dt = datetime.strptime(end_date_str, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
-
-    order_data = (
-        db.session.query(
-            func.date(Order.created_at).label("day"),
-            func.count(func.distinct(Order.id)).label("order_count"),
-            func.sum(OrderItem.quantity * OrderItem.unit_price).label("total_sales"),
-            func.sum(OrderItem.quantity * OrderItem.unit_margin).label("total_margin"),
-        )
-        .join(OrderItem, Order.id == OrderItem.order_id)
-        .filter(Order.created_at >= start_dt, Order.created_at <= end_dt)
-        .group_by(func.date(Order.created_at))
-        .order_by(func.date(Order.created_at))
-        .all()
-    )
-
-    orders_by_day = {
-        datetime.strptime(record.day, "%Y-%m-%d").date(): {
-            "order_count": record.order_count,
-            "total_sales": float(record.total_sales or 0),
-            "total_margin": float(record.total_margin or 0),
-        }
-        for record in order_data
-    }
-
-    smm_data = (
-        db.session.query(SMMStats)
-        .filter(SMMStats.date >= start_dt.date(), SMMStats.date <= end_dt.date())
-        .all()
-    )
-    smm_by_day = {sd.date: sd for sd in smm_data}
-
-    days = []
-    day = start_dt
-
-    while day <= end_dt:
-        order_info = orders_by_day.get(
-            day.date(), {"order_count": 0, "total_sales": 0.0, "total_margin": 0.0}
-        )
-
-        smm_info = smm_by_day.get(day.date())
-
-        if smm_info and not smm_info.usd_rate:
-            smm_info.usd_rate = get_usd_uah_rate(day)
-            db.session.commit()
-
-        spends_usd = float(smm_info.spends) if smm_info else 0.0
-        rate = float(smm_info.usd_rate) if (smm_info and smm_info.usd_rate) else 0.0
-        spends_uah = spends_usd * rate
-
-        days.append(
-            {
-                "date": day.date().isoformat(),
-                "order_count": order_info["order_count"],
-                "total_sales": order_info["total_sales"],
-                "total_margin": order_info["total_margin"],
-                "smm_spends_usd": spends_usd,
-                "smm_spends_uah": spends_uah,
-                "smm_coverage": smm_info.coverage if smm_info else 0,
-                "smm_clicks": smm_info.clicks if smm_info else 0,
-                "smm_direct_messages": smm_info.direct_messages if smm_info else 0,
-                "revenue": order_info["total_margin"] - spends_uah,
-            }
-        )
-
-        day += timedelta(days=1)
-
-    return days
 
 
 @analytics.route("/update_smm_stat", methods=["POST"])
@@ -154,7 +83,6 @@ def update_smm_stat():
         "value": value,
         "usd_rate": usd_rate
     })
-
 
 @analytics.route("/summary", methods=["GET", "POST"])
 @login_required
@@ -217,3 +145,25 @@ def summary():
             "order_price_average": smm.total_spends,
         })
     return render_template("analytics/sum.html")
+
+@analytics.route("/export_monthly_stats_xlsx", methods=["POST"])
+@login_required
+def export_monthly_stats_xlsx():
+    data = request.get_json() or {}
+    start_date = data.get("startDate")
+    end_date = data.get("endDate")
+
+    if not start_date or not end_date:
+        return jsonify({"error": "startDate/endDate required"}), 400
+
+    days = build_monthly_stats_days(start_date, end_date)
+
+    output = build_excel_data(days)
+
+    filename = f"monthly_stats_{start_date}_to_{end_date}.xlsx"
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

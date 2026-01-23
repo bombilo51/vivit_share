@@ -5,97 +5,102 @@
 {% endblock %}
 
 {% block head %}
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css"/>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css"/>
 
-<style>
-  /* sticky header без scroll-container */
-  #statsTable thead th {
-    position: sticky;
-    top: 0;
-    background: #fff;
-    z-index: 10;
-    box-shadow: 0 1px 0 rgba(0,0,0,.08);
-  }
+    <style>
+        /* sticky header без scroll-container */
+        #statsTable thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 10;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, .08);
+        }
 
-  /* підсумковий рядок (tfoot) */
-  #statsTable tfoot th, #statsTable tfoot td {
-    background: rgba(80,80,80,0.18);
-    font-weight: 600;
-  }
+        /* підсумковий рядок (tfoot) */
+        #statsTable tfoot th, #statsTable tfoot td {
+            background: rgba(80, 80, 80, 0.18);
+            font-weight: 600;
+        }
 
-  /* щоб інпути нормально виглядали в таблиці */
-  #statsTable input.form-control {
-    min-width: 110px;
-  }
+        /* щоб інпути нормально виглядали в таблиці */
+        #statsTable input.form-control {
+            min-width: 110px;
+        }
 
-  /* щоб довгі числа не ламали верстку */
-  #statsTable td, #statsTable th {
-    vertical-align: middle;
-    white-space: nowrap;
-  }
+        /* щоб довгі числа не ламали верстку */
+        #statsTable td, #statsTable th {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
 
-  /* перша колонка (дата) можна дозволити переносити/ширше */
-  #statsTable td.col-date, #statsTable th.col-date {
-    white-space: normal;
-    min-width: 120px;
-  }
-</style>
+        /* перша колонка (дата) можна дозволити переносити/ширше */
+        #statsTable td.col-date, #statsTable th.col-date {
+            white-space: normal;
+            min-width: 120px;
+        }
+    </style>
 {% endblock head %}
 
 {% block content %}
-<h2>Статистика</h2>
-<a href="{{ url_for('analytics.summary') }}">Звіт</a>
+    <h2>Статистика</h2>
+    <a href="{{ url_for('analytics.summary') }}">Звіт</a>
 
-<div class="row mt-2">
-  <div class="col-md-3">
-    <label for="startDateFilter" class="form-label"><strong>Дата початку: </strong></label>
-    <input type="text" class="form-control" id="startDateFilter" name="startDate"
-           placeholder="Дата початку" autocomplete="off"/>
-  </div>
-  <div class="col-md-3">
-    <label for="endDateFilter" class="form-label"><strong>Дата кінця: </strong></label>
-    <input type="text" class="form-control" id="endDateFilter" name="endDate"
-           placeholder="Дата кінця" autocomplete="off"/>
-  </div>
-</div>
+    <div class="row mt-2">
+        <div class="col-md-3">
+            <label for="startDateFilter" class="form-label"><strong>Дата початку: </strong></label>
+            <input type="text" class="form-control" id="startDateFilter" name="startDate"
+                   placeholder="Дата початку" autocomplete="off"/>
+        </div>
+        <div class="col-md-3">
+            <label for="endDateFilter" class="form-label"><strong>Дата кінця: </strong></label>
+            <input type="text" class="form-control" id="endDateFilter" name="endDate"
+                   placeholder="Дата кінця" autocomplete="off"/>
+        </div>
+        <div class="col-md-1 align-self-end offset-md-5">
+            <a class="btn btn-success" id="downloadExcel">
+                <i class="bi bi-download"></i> Excel
+            </a>
+        </div>
+    </div>
 
-<table id="statsTable" class="table table-hover mt-3">
-  <thead>
-    <tr>
-      <th class="col-date">День</th>
-      <th>К-сть замовлень</th>
-      <th>Сума продажів</th>
-      <th>Маржа</th>
-      <th>Витрати на рекламу (USD)</th>
-      <th>Витрати на рекламу (UAH)</th>
-      <th>Охоплення</th>
-      <th>Кліки</th>
-      <th>Звернення</th>
-      <th>Прибуток</th>
-    </tr>
-  </thead>
+    <table id="statsTable" class="table table-hover mt-3">
+        <thead>
+        <tr>
+            <th class="col-date">День</th>
+            <th>К-сть замовлень</th>
+            <th>Сума продажів</th>
+            <th>Маржа</th>
+            <th>Витрати на рекламу (USD)</th>
+            <th>Витрати на рекламу (UAH)</th>
+            <th>Охоплення</th>
+            <th>Кліки</th>
+            <th>Звернення</th>
+            <th>Прибуток</th>
+        </tr>
+        </thead>
 
-  <tbody></tbody>
+        <tbody></tbody>
 
-  <tfoot>
-    <tr>
-      <th id="sum-day" class="col-date"></th>
-      <th id="sum-orders-count"></th>
-      <th id="sum-sales"></th>
-      <th id="sum-margin"></th>
-      <th id="sum-spends-usd"></th>
-      <th id="sum-spends-uah"></th>
-      <th id="sum-coverage"></th>
-      <th id="sum-clicks"></th>
-      <th id="sum-dms"></th>
-      <th id="sum-revenue"></th>
-    </tr>
-  </tfoot>
-</table>
+        <tfoot>
+        <tr>
+            <th id="sum-day" class="col-date"></th>
+            <th id="sum-orders-count"></th>
+            <th id="sum-sales"></th>
+            <th id="sum-margin"></th>
+            <th id="sum-spends-usd"></th>
+            <th id="sum-spends-uah"></th>
+            <th id="sum-coverage"></th>
+            <th id="sum-clicks"></th>
+            <th id="sum-dms"></th>
+            <th id="sum-revenue"></th>
+        </tr>
+        </tfoot>
+    </table>
 {% endblock content %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
-<script src="{{ url_for('static', filename='js/analytics/stats.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+    <script src="{{ url_for('static', filename='js/analytics/stats.js') }}"></script>
 {% endblock scripts %}

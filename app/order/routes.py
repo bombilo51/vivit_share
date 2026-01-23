@@ -72,7 +72,6 @@ def order_unit_names():
         "items": items
     })
 
-
 @order.route("/list", methods=["GET"])
 @login_required
 def orders_list():
@@ -169,7 +168,6 @@ def orders_list():
 
     return render_template("order/list.html", **context)
 
-
 @order.route("/add", methods=["GET", "POST"])
 @login_required
 def add_order():
@@ -255,12 +253,6 @@ def add_order():
 
     return render_template("order/add.html", products=products)
 
-
-
-
-def _safe_get(lst, i, default=""):
-    return lst[i] if i < len(lst) else default
-
 @order.route("/edit/<int:order_id>", methods=["GET", "POST"])
 @login_required
 def edit_order(order_id):
@@ -284,6 +276,9 @@ def edit_order(order_id):
         unit_margins = request.form.getlist("unitMargin[]")
 
         aggregated = defaultdict(lambda: {"quantity": 0, "unit_price": None, "unit_margin": None})
+
+        def _safe_get(lst, i, default=""):
+            return lst[i] if i < len(lst) else default
 
         for i in range(len(product_ids)):
             pid = _safe_get(product_ids, i)
@@ -360,9 +355,8 @@ def edit_order(order_id):
 
     return render_template("order/edit.html", products=products, order=order)
 
-
-@login_required
 @order.route("/delete_order/<int:order_id>", methods=["DELETE"])
+@login_required
 def delete_order(order_id):
     order: Order = Order.query.get_or_404(order_id)
     db.session.delete(order)

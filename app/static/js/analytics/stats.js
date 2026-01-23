@@ -21,6 +21,14 @@ $(function () {
         minViewMode: 0,
     });
 
+    $('#downloadExcel').on("click", () => {
+        const startDate = $startDate.val();
+        const endDate = $endDate.val();
+        if (!startDate || !endDate) return;
+
+        downloadMonthlyStatsXlsx(startDate, endDate).then(r => console.log(r));
+    });
+
     function DateFilterChange() {
         const startDate = $startDate.val();
         const endDate = $endDate.val();
@@ -160,4 +168,33 @@ function recountSum(data) {
     $clicks.text(clicks);
     $dms.text(dms);
     $revenue.text(moneySpace(revenue, 2));
+}
+
+async function downloadMonthlyStatsXlsx(startDate, endDate) {
+    const res = await fetch("/analytics/export_monthly_stats_xlsx", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({startDate, endDate})
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Export failed");
+    }
+
+    const blob = await res.blob();
+
+    // Try to use filename from Content-Disposition if present; fallback otherwise
+    const cd = res.headers.get("Content-Disposition") || "";
+    const match = cd.match(/filename="?([^"]+)"?/i);
+    const filename = match?.[1] || `monthly_stats_${startDate}_to_${endDate}.xlsx`;
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
 }
